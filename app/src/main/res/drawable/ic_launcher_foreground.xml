@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Tetris T-piece in retro cyan color -->
+    <group
+        android:translateX="54"
+        android:translateY="54">
+        <!-- Top horizontal blocks -->
+        <path
+            android:fillColor="#00F0F0"
+            android:pathData="M-15,-15h10v10h-10z"/>
+        <path
+            android:fillColor="#00F0F0"
+            android:pathData="M-5,-15h10v10h-10z"/>
+        <path
+            android:fillColor="#00F0F0"
+            android:pathData="M5,-15h10v10h-10z"/>
+        <!-- Bottom center block -->
+        <path
+            android:fillColor="#00F0F0"
+            android:pathData="M-5,-5h10v10h-10z"/>
+
+        <!-- Block borders (darker) -->
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-15,-15h10v1h-10z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-15,-15h1v10h-1z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-5,-15h10v1h-10z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-5,-15h1v10h-1z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M5,-15h10v1h-10z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M5,-15h1v10h-1z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-5,-5h10v1h-10z"/>
+        <path
+            android:fillColor="#00A0A0"
+            android:pathData="M-5,-5h1v10h-1z"/>
+    </group>
+</vector>
