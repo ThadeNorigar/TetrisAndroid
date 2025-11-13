@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Block-Grafik für T-Tetromino (Purple) -->
+<!-- Ersetzen Sie diese Datei durch Ihre eigene PNG/JPG/WebP-Datei mit dem gleichen Namen -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FF00FF" />
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFF" />
+    <corners android:radius="2dp" />
+</shape>
