@@ -10,8 +10,6 @@ import androidx.compose.ui.Modifier
 import com.tetris.game.GameState
 import com.tetris.ui.GameScreen
 import com.tetris.ui.MenuScreen
-import com.tetris.ui.OptionsScreen
-import com.tetris.ui.theme.AllThemes
 
 /**
  * Main activity for the Tetris game
@@ -41,17 +39,6 @@ fun TetrisApp(viewModel: GameViewModel) {
                 theme = currentTheme,
                 highScore = highScore,
                 onStartGame = { viewModel.startGame() },
-                onOptions = { viewModel.showOptions() },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        is ScreenState.Options -> {
-            OptionsScreen(
-                currentTheme = currentTheme,
-                availableThemes = AllThemes,
-                onThemeSelected = { viewModel.changeTheme(it) },
-                onBack = { viewModel.returnToMenu() },
                 modifier = Modifier.fillMaxSize()
             )
         }

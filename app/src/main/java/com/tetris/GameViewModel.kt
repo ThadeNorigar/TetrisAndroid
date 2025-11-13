@@ -154,23 +154,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _screenState.value = ScreenState.Menu
     }
 
-    /**
-     * Show options screen
-     */
-    fun showOptions() {
-        _screenState.value = ScreenState.Options
-    }
-
-    /**
-     * Change theme
-     */
-    fun changeTheme(theme: TetrisTheme) {
-        _currentTheme.value = theme
-        viewModelScope.launch {
-            preferences.saveTheme(theme.name)
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         game?.dispose()
@@ -183,5 +166,4 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 sealed class ScreenState {
     object Menu : ScreenState()
     object Game : ScreenState()
-    object Options : ScreenState()
 }
