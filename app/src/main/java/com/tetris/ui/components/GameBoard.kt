@@ -86,12 +86,14 @@ fun GameBoard(
             calculatedWidth to maxHeight
         }
 
-        // Frame border width: 10dp on each side (20dp total width/height added)
+        // Frame border width: 10dp on each side
+        // Bottom border: Additional 20dp (total 30dp at bottom)
         val frameBorderSize = 10.dp
+        val bottomBorderExtra = 20.dp
 
         // Adjust canvas size to include frame border
         val canvasWidth = finalWidth + (frameBorderSize * 2)
-        val canvasHeight = finalHeight + (frameBorderSize * 2)
+        val canvasHeight = finalHeight + (frameBorderSize * 2) + bottomBorderExtra
 
         Canvas(
             modifier = Modifier

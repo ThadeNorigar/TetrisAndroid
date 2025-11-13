@@ -6,21 +6,25 @@
     Der Rahmen wird als OVERLAY über die Blöcke gezeichnet.
 
     Spezifikationen:
-    - Rahmenbreite: 10px auf allen Seiten (links, rechts, oben, unten)
-    - Gesamtgröße: Spielfeld-Größe + 20px Breite + 20px Höhe
-    - Beispiel: Spielfeld 640x1280 px → Rahmen 660x1300 px
+    - Rahmenbreite links/rechts/oben: 10px
+    - Rahmenbreite unten: 30px (20px zusätzlich)
+    - Gesamtgröße: Spielfeld-Größe + 20px Breite + 40px Höhe
+    - Beispiel: Spielfeld 640x1280 px → Rahmen 660x1320 px
     - Format: PNG (empfohlen - MUSS Transparenz unterstützen), WebP
 
     Aufbau:
-    - Äußere 10px: Rahmen-Grafik (sichtbar)
+    - Links: 10px Rahmen
+    - Rechts: 10px Rahmen
+    - Oben: 10px Rahmen
+    - Unten: 30px Rahmen (dicker für Platzierung am unteren Rand)
     - Innerer Bereich: TRANSPARENT (damit Blöcke durchscheinen)
-    - Der Rahmen überlappt die äußeren Blöcke um 10px
+    - Der Rahmen überlappt die äußeren Blöcke
 
     Design-Tipps:
     - Der Rahmen kann dekorativ sein (3D-Effekt, Schatten, Glow, Textur, etc.)
+    - Unterer Rahmen kann breiter/dekorativer sein (30px Platz verfügbar)
     - Innerer transparenter Bereich ist WICHTIG
     - Der Rahmen liegt ÜBER den Blöcken (Overlay-Effekt)
-    - Empfehlung: Dickerer Rahmen für bessere Sichtbarkeit (10-15px)
 
     Diese XML-Datei ist nur ein einfacher Platzhalter-Rahmen.
     Ersetzen Sie sie durch Ihre eigene PNG-Datei mit Transparenz.
