@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PLATZHALTER: Ersetzen Sie diese Datei durch blocks_spritesheet.png
+
+    Spritesheet-Spezifikationen:
+    - Layout: 7 Blöcke horizontal nebeneinander (I, O, T, S, Z, J, L)
+    - Empfohlene Größe: 448 x 64 px (7 × 64px)
+    - Format: PNG, WebP oder JPG
+    - Jeder Block: 64 x 64 px (oder ein Vielfaches davon)
+
+    Siehe BLOCKS_SPRITESHEET_README.md für Details
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- I-Block (Cyan) - Position 0 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#00FFFF" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- O-Block (Yellow) - Position 1 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="64dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFF00" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- T-Block (Purple) - Position 2 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="128dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF00FF" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- S-Block (Green) - Position 3 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="192dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#00FF00" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Z-Block (Red) - Position 4 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="256dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF0000" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- J-Block (Blue) - Position 5 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="320dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#0000FF" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- L-Block (Orange) - Position 6 -->
+    <item
+        android:width="64dp"
+        android:height="64dp"
+        android:left="384dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFA500" />
+            <stroke android:width="1dp" android:color="#FFFFFF" />
+        </shape>
+    </item>
+</layer-list>
