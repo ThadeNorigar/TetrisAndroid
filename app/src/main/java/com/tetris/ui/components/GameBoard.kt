@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.tetris.game.Tetromino
@@ -66,6 +67,8 @@ fun GameBoard(
         null
     }
 
+    val density = LocalDensity.current
+
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -85,7 +88,6 @@ fun GameBoard(
 
         // Frame border width: 10dp on each side (20dp total width/height added)
         val frameBorderSize = 10.dp
-        val frameBorderPx = frameBorderSize.value * density
 
         // Adjust canvas size to include frame border
         val canvasWidth = finalWidth + (frameBorderSize * 2)
@@ -99,6 +101,9 @@ fun GameBoard(
                     else it
                 }
         ) {
+            // Convert frame border to pixels
+            val frameBorderPx = with(density) { frameBorderSize.toPx() }
+
             // Calculate block size based on inner area (without frame)
             val innerWidth = size.width - (frameBorderPx * 2)
             val blockSizePx = innerWidth / boardWidth
