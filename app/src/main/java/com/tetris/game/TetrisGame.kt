@@ -111,34 +111,27 @@ class TetrisGame(
 
     /**
      * Rotate piece clockwise
+     * SNES Tetris uses Nintendo Rotation System - no wall kicks!
      */
     fun rotatePiece() {
         val piece = _currentPiece.value ?: return
         if (_gameState.value !is GameState.Playing) return
 
+        // O piece doesn't rotate in Nintendo Rotation System
+        if (piece.type == TetrominoType.O) return
+
         val rotated = piece.rotated()
 
-        // Try rotation without offset
+        // Nintendo Rotation System: No wall kicks - rotation fails if there's a collision
         if (!board.checkCollision(rotated)) {
             _currentPiece.value = rotated
-            return
         }
-
-        // Try wall kicks
-        val wallKicks = listOf(-1 to 0, 1 to 0, 0 to -1)
-        for ((offsetX, offsetY) in wallKicks) {
-            if (!board.checkCollision(rotated, offsetX, offsetY)) {
-                _currentPiece.value = rotated.copy(
-                    x = rotated.x + offsetX,
-                    y = rotated.y + offsetY
-                )
-                return
-            }
-        }
+        // If collision detected, rotation simply fails (no kick attempts)
     }
 
     /**
      * Hard drop - instantly drop piece to bottom
+     * Note: SNES Tetris didn't have hard drop, but we keep it without score bonus
      */
     fun hardDrop() {
         val piece = _currentPiece.value ?: return
@@ -150,8 +143,8 @@ class TetrisGame(
         }
 
         _currentPiece.value = piece.copy(y = piece.y + dropDistance)
-        // Award 2 points per row for hard drop
-        _stats.value = _stats.value.copy(score = _stats.value.score + dropDistance * 2)
+        // SNES Tetris: No hard drop bonus (keeping soft drop points only)
+        _stats.value = _stats.value.copy(score = _stats.value.score + dropDistance)
         lockPiece()
     }
 
@@ -238,16 +231,16 @@ class TetrisGame(
     private fun updateStats(linesCleared: Int) {
         val currentStats = _stats.value
 
-        // Scoring: 100 for 1 line, 300 for 2, 500 for 3, 800 for 4 (Tetris)
+        // SNES Tetris Scoring: 40/100/300/800 × (level + 1)
         val lineScore = when (linesCleared) {
-            1 -> 100
-            2 -> 300
-            3 -> 500
+            1 -> 40
+            2 -> 100
+            3 -> 300
             4 -> 800
             else -> 0
         }
 
-        val newScore = currentStats.score + lineScore * currentStats.level
+        val newScore = currentStats.score + lineScore * (currentStats.level + 1)
         val newLinesCleared = currentStats.linesCleared + linesCleared
 
         // Level up every 10 lines
