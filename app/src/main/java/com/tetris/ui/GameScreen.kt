@@ -157,13 +157,12 @@ private fun PlayingScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Next piece preview (text and border are in background image)
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 NextPiecePreview(
                     nextPiece = nextPiece,
@@ -174,8 +173,7 @@ private fun PlayingScreen(
 
             // Stats
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(2f)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Score
                 Row(
@@ -225,18 +223,6 @@ private fun PlayingScreen(
                         color = theme.textPrimary
                     )
                 }
-            }
-
-            // Hard Drop button
-            Button(
-                onClick = onHardDrop,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.gridBorder,
-                    contentColor = theme.textPrimary
-                )
-            ) {
-                Text("⬇", fontSize = 20.sp)
             }
         }
 

@@ -27,7 +27,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Simplified touch controls for the game - 4 buttons only
+ * Touch controls for the game - 5 buttons
  */
 @Composable
 fun GameControls(
@@ -55,7 +55,7 @@ fun GameControls(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
 
         // Down button with hold functionality
         HoldableDownButton(
@@ -65,7 +65,19 @@ fun GameControls(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Hard Drop button
+        ControlButton(
+            text = "⬇",
+            buttonType = "button_hard_drop",
+            onClick = onHardDrop,
+            theme = theme,
+            useGraphics = useGraphics,
+            modifier = Modifier.weight(1f)
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
 
         // Rotate button
         ControlButton(
@@ -77,7 +89,7 @@ fun GameControls(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
 
         // Right button
         ControlButton(
