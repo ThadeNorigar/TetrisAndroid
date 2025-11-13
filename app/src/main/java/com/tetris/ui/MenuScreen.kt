@@ -60,36 +60,6 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-        // Title
-        Text(
-            text = "RETRO TETRIS",
-            fontSize = 48.sp,
-            fontWeight = FontWeight.Bold,
-            color = theme.textHighlight
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Subtitle
-        Text(
-            text = "Classic Block Puzzle",
-            fontSize = 20.sp,
-            color = theme.textSecondary
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        // High Score
-        if (highScore > 0) {
-            Text(
-                text = "HIGH SCORE: $highScore",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = theme.textPrimary
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-
         // Menu buttons
         MenuButton(
             text = "START GAME",
@@ -98,37 +68,14 @@ fun MenuScreen(
             highlighted = true
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Instructions
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
+        // High Score (dezent)
+        if (highScore > 0) {
             Text(
-                text = "HOW TO PLAY:",
+                text = "HIGH SCORE: $highScore",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = theme.textPrimary
-            )
-            Text(
-                text = "Swipe Left/Right: Move",
-                fontSize = 14.sp,
-                color = theme.textSecondary
-            )
-            Text(
-                text = "Tap or Swipe Up: Rotate",
-                fontSize = 14.sp,
-                color = theme.textSecondary
-            )
-            Text(
-                text = "Double Tap: Hard Drop",
-                fontSize = 14.sp,
-                color = theme.textSecondary
-            )
-            Text(
-                text = "Swipe Down: Soft Drop",
-                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
                 color = theme.textSecondary
             )
         }
