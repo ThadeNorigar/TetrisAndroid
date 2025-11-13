@@ -104,116 +104,135 @@ private fun PlayingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top bar with stats
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "SCORE",
-                    fontSize = 14.sp,
-                    color = theme.textSecondary
-                )
-                Text(
-                    text = "${stats.score}",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textPrimary
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "HIGH",
-                    fontSize = 14.sp,
-                    color = theme.textSecondary
-                )
-                Text(
-                    text = "$highScore",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textHighlight
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "LEVEL: ${stats.level}",
-                fontSize = 18.sp,
-                color = theme.textPrimary
-            )
-            Text(
-                text = "LINES: ${stats.linesCleared}",
-                fontSize = 18.sp,
-                color = theme.textPrimary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Game board and next piece
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Top
+        // Game board - takes maximum available space
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.Center
         ) {
             GameBoard(
                 board = board,
                 currentPiece = currentPiece,
-                theme = theme
+                theme = theme,
+                modifier = Modifier.fillMaxSize()
             )
+        }
 
-            Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Info section: Next piece, Score, Level, Lines
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Next piece preview
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = "NEXT",
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = theme.textPrimary
+                    color = theme.textSecondary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 NextPiecePreview(
                     nextPiece = nextPiece,
                     theme = theme
                 )
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Pause button
-                Button(
-                    onClick = onPause,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = theme.gridBorder,
-                        contentColor = theme.textPrimary
-                    )
+            // Stats
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(2f)
+            ) {
+                // Score
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("⏸ PAUSE")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "SCORE",
+                            fontSize = 10.sp,
+                            color = theme.textSecondary
+                        )
+                        Text(
+                            text = "${stats.score}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = theme.textPrimary
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "HIGH",
+                            fontSize = 10.sp,
+                            color = theme.textSecondary
+                        )
+                        Text(
+                            text = "$highScore",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = theme.textHighlight
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                // Level and Lines
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "LVL: ${stats.level}",
+                        fontSize = 12.sp,
+                        color = theme.textPrimary
+                    )
+                    Text(
+                        text = "LINES: ${stats.linesCleared}",
+                        fontSize = 12.sp,
+                        color = theme.textPrimary
+                    )
+                }
+            }
+
+            // Pause button
+            Button(
+                onClick = onPause,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = theme.gridBorder,
+                    contentColor = theme.textPrimary
+                )
+            ) {
+                Text("⏸", fontSize = 20.sp)
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Controls
+        // Controls at the bottom
         GameControls(
             theme = theme,
             onMoveLeft = onMoveLeft,
             onMoveRight = onMoveRight,
             onMoveDown = onMoveDown,
             onRotate = onRotate,
-            onHardDrop = onHardDrop
+            onHardDrop = onHardDrop,
+            modifier = Modifier.padding(horizontal = 8.dp)
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
