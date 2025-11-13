@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PLATZHALTER: Ersetzen Sie diese Datei durch button_start.png
+
+    Dies ist die Grafik für den "START GAME"-Button.
+
+    Spezifikationen:
+    - Format: PNG (empfohlen), WebP, JPG
+    - Empfohlene Größe: 512 x 112 px (breites Rechteck)
+    - Der Button wird mit ContentScale.Fit skaliert
+    - Die tatsächliche Button-Höhe ist 56dp
+    - Button-Breite ist fillMaxWidth()
+
+    Design-Tipps:
+    - Die Grafik sollte zentriert sein
+    - Transparenter Hintergrund empfohlen (PNG)
+    - Passend zum Theme gestalten
+    - Text "START GAME" oder ähnliches einbauen
+    - Dieser Button ist highlighted (gold/gelb im Standard-Theme)
+
+    Diese XML-Datei ist nur ein einfacher Platzhalter.
+    Ersetzen Sie sie durch Ihre eigene PNG-Datei.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFD700" />
+    <corners android:radius="8dp" />
+</shape>

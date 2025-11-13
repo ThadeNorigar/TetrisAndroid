@@ -1,5 +1,6 @@
 package com.tetris.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -12,6 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tetris.ui.theme.TetrisTheme
@@ -29,8 +33,36 @@ fun GameControls(
     onMoveDown: () -> Unit,
     onRotate: () -> Unit,
     onHardDrop: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useGraphics: Boolean = true
 ) {
+    val context = LocalContext.current
+
+    // Load button graphics if available
+    val buttonLeftRes = if (useGraphics) {
+        try {
+            context.resources.getIdentifier("button_left", "drawable", context.packageName)
+        } catch (e: Exception) { 0 }
+    } else 0
+
+    val buttonRightRes = if (useGraphics) {
+        try {
+            context.resources.getIdentifier("button_right", "drawable", context.packageName)
+        } catch (e: Exception) { 0 }
+    } else 0
+
+    val buttonDownRes = if (useGraphics) {
+        try {
+            context.resources.getIdentifier("button_down", "drawable", context.packageName)
+        } catch (e: Exception) { 0 }
+    } else 0
+
+    val buttonRotateRes = if (useGraphics) {
+        try {
+            context.resources.getIdentifier("button_rotate", "drawable", context.packageName)
+        } catch (e: Exception) { 0 }
+    } else 0
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -39,6 +71,7 @@ fun GameControls(
         // Left button
         ControlButton(
             text = "◀",
+            imageRes = buttonLeftRes,
             onClick = onMoveLeft,
             theme = theme,
             modifier = Modifier.weight(1f)
@@ -48,6 +81,7 @@ fun GameControls(
 
         // Down button with hold functionality
         HoldableDownButton(
+            imageRes = buttonDownRes,
             theme = theme,
             onMoveDown = onMoveDown,
             modifier = Modifier.weight(1f)
@@ -58,6 +92,7 @@ fun GameControls(
         // Rotate button
         ControlButton(
             text = "⟲",
+            imageRes = buttonRotateRes,
             onClick = onRotate,
             theme = theme,
             modifier = Modifier.weight(1f)
@@ -68,6 +103,7 @@ fun GameControls(
         // Right button
         ControlButton(
             text = "▶",
+            imageRes = buttonRightRes,
             onClick = onMoveRight,
             theme = theme,
             modifier = Modifier.weight(1f)
@@ -80,7 +116,8 @@ private fun ControlButton(
     text: String,
     onClick: () -> Unit,
     theme: TetrisTheme,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imageRes: Int = 0
 ) {
     Button(
         onClick = onClick,
@@ -92,10 +129,19 @@ private fun ControlButton(
             contentColor = theme.textPrimary
         )
     ) {
-        Text(
-            text = text,
-            fontSize = 32.sp
-        )
+        if (imageRes != 0) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = text,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Text(
+                text = text,
+                fontSize = 32.sp
+            )
+        }
     }
 }
 
@@ -103,7 +149,8 @@ private fun ControlButton(
 private fun HoldableDownButton(
     theme: TetrisTheme,
     onMoveDown: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imageRes: Int = 0
 ) {
     val coroutineScope = rememberCoroutineScope()
     var isPressed by remember { mutableStateOf(false) }
@@ -143,9 +190,18 @@ private fun HoldableDownButton(
             contentColor = if (isPressed) theme.background else theme.textPrimary
         )
     ) {
-        Text(
-            text = "▼",
-            fontSize = 32.sp
-        )
+        if (imageRes != 0) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "Down",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Text(
+                text = "▼",
+                fontSize = 32.sp
+            )
+        }
     }
 }

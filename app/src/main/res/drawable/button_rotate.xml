@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PLATZHALTER: Ersetzen Sie diese Datei durch button_rotate.png
+
+    Dies ist die Grafik für den "Drehen"-Button (⟲).
+
+    Spezifikationen:
+    - Format: PNG (empfohlen), WebP, JPG
+    - Empfohlene Größe: 128 x 128 px (quadratisch)
+    - Der Button wird mit ContentScale.Fit skaliert
+    - Die tatsächliche Button-Höhe ist 72dp
+    - Button-Breite passt sich dynamisch an (weight = 1f)
+
+    Design-Tipps:
+    - Die Grafik sollte zentriert sein
+    - Transparenter Hintergrund empfohlen (PNG)
+    - Passend zum Theme gestalten
+    - Symbol sollte klar erkennbar sein (Rotationspfeil)
+
+    Diese XML-Datei ist nur ein einfacher Platzhalter.
+    Ersetzen Sie sie durch Ihre eigene PNG-Datei.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#404040" />
+    <corners android:radius="12dp" />
+</shape>

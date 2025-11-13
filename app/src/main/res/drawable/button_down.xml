@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PLATZHALTER: Ersetzen Sie diese Datei durch button_down.png
+
+    Dies ist die Grafik für den "Runter"-Button (▼).
+
+    Spezifikationen:
+    - Format: PNG (empfohlen), WebP, JPG
+    - Empfohlene Größe: 128 x 128 px (quadratisch)
+    - Der Button wird mit ContentScale.Fit skaliert
+    - Die tatsächliche Button-Höhe ist 72dp
+    - Button-Breite passt sich dynamisch an (weight = 1f)
+
+    Design-Tipps:
+    - Die Grafik sollte zentriert sein
+    - Transparenter Hintergrund empfohlen (PNG)
+    - Passend zum Theme gestalten
+    - Symbol sollte klar erkennbar sein (Pfeil nach unten)
+    - Dieser Button ändert die Farbe beim Gedrückthalten (highlight)
+
+    Diese XML-Datei ist nur ein einfacher Platzhalter.
+    Ersetzen Sie sie durch Ihre eigene PNG-Datei.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#404040" />
+    <corners android:radius="12dp" />
+</shape>

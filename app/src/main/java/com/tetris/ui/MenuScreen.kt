@@ -91,11 +91,19 @@ fun MenuScreen(
         }
 
         // Menu buttons
+        // Load START GAME button graphic
+        val buttonStartRes = if (useGraphics) {
+            try {
+                context.resources.getIdentifier("button_start", "drawable", context.packageName)
+            } catch (e: Exception) { 0 }
+        } else 0
+
         MenuButton(
             text = "START GAME",
             onClick = onStartGame,
             theme = theme,
-            highlighted = true
+            highlighted = true,
+            imageRes = buttonStartRes
         )
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -242,7 +250,8 @@ private fun MenuButton(
     onClick: () -> Unit,
     theme: TetrisTheme,
     highlighted: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imageRes: Int = 0
 ) {
     Button(
         onClick = onClick,
@@ -254,10 +263,19 @@ private fun MenuButton(
             contentColor = if (highlighted) theme.background else theme.textPrimary
         )
     ) {
-        Text(
-            text = text,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+        if (imageRes != 0) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = text,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Text(
+                text = text,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

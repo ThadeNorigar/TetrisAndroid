@@ -127,6 +127,15 @@ private fun PlayingScreen(
     onPause: () -> Unit,
     useGraphics: Boolean = true
 ) {
+    val context = LocalContext.current
+
+    // Load Hard Drop button graphic
+    val buttonHardDropRes = if (useGraphics) {
+        try {
+            context.resources.getIdentifier("button_harddrop", "drawable", context.packageName)
+        } catch (e: Exception) { 0 }
+    } else 0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -236,7 +245,16 @@ private fun PlayingScreen(
                     contentColor = theme.textPrimary
                 )
             ) {
-                Text("⬇", fontSize = 20.sp)
+                if (buttonHardDropRes != 0) {
+                    Image(
+                        painter = painterResource(id = buttonHardDropRes),
+                        contentDescription = "Hard Drop",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text("⬇", fontSize = 20.sp)
+                }
             }
         }
 
@@ -250,7 +268,8 @@ private fun PlayingScreen(
             onMoveDown = onMoveDown,
             onRotate = onRotate,
             onHardDrop = onHardDrop,
-            modifier = Modifier.padding(horizontal = 8.dp)
+            modifier = Modifier.padding(horizontal = 8.dp),
+            useGraphics = useGraphics
         )
 
         Spacer(modifier = Modifier.height(8.dp))
