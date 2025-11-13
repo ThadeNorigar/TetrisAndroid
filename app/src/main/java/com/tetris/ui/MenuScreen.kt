@@ -1,5 +1,6 @@
 package com.tetris.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,17 +26,40 @@ fun MenuScreen(
     theme: TetrisTheme,
     highScore: Int,
     onStartGame: () -> Unit,
-    onOptions: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useGraphics: Boolean = true
 ) {
-    Column(
+    val context = LocalContext.current
+
+    // Load fullscreen menu background image if available
+    val menuBackgroundResourceId = try {
+        context.resources.getIdentifier("menu_background", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(theme.background)
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
+        // Draw fullscreen background image if available
+        if (useGraphics && menuBackgroundResourceId != 0) {
+            Image(
+                painter = painterResource(id = menuBackgroundResourceId),
+                contentDescription = "Menu Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         // Title
         Text(
             text = "RETRO TETRIS",
@@ -71,14 +98,6 @@ fun MenuScreen(
             highlighted = true
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        MenuButton(
-            text = "OPTIONS",
-            onClick = onOptions,
-            theme = theme
-        )
-
         Spacer(modifier = Modifier.height(48.dp))
 
         // Instructions
@@ -112,6 +131,7 @@ fun MenuScreen(
                 fontSize = 14.sp,
                 color = theme.textSecondary
             )
+        }
         }
     }
 }

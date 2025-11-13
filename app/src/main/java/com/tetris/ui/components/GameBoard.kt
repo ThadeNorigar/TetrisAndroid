@@ -38,11 +38,15 @@ fun GameBoard(
 
     val context = LocalContext.current
 
-    // Load background image if available
-    val backgroundDrawable = try {
-        ContextCompat.getDrawable(context,
-            context.resources.getIdentifier("game_background", "drawable", context.packageName))
-    } catch (e: Exception) {
+    // Load board frame image if available
+    val boardFrameDrawable = if (useGraphics) {
+        try {
+            ContextCompat.getDrawable(context,
+                context.resources.getIdentifier("board_frame", "drawable", context.packageName))
+        } catch (e: Exception) {
+            null
+        }
+    } else {
         null
     }
 
@@ -79,22 +83,33 @@ fun GameBoard(
             calculatedWidth to maxHeight
         }
 
-        Canvas(
-            modifier = Modifier
-                .size(width = finalWidth, height = finalHeight)
-                .border(3.dp, theme.gridBorder)
+        Box(
+            modifier = Modifier.size(width = finalWidth, height = finalHeight),
+            contentAlignment = Alignment.Center
         ) {
-            val blockSizePx = size.width / boardWidth
-
-            // Draw background image if available
-            backgroundDrawable?.let { drawable ->
-                drawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
-                drawContext.canvas.nativeCanvas.apply {
-                    drawable.draw(this)
+            // Draw board frame if available
+            if (boardFrameDrawable != null) {
+                androidx.compose.foundation.Canvas(
+                    modifier = Modifier.matchParentSize()
+                ) {
+                    boardFrameDrawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
+                    drawContext.canvas.nativeCanvas.apply {
+                        boardFrameDrawable.draw(this)
+                    }
                 }
             }
 
-            // Draw locked blocks
+            Canvas(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        if (boardFrameDrawable == null) Modifier.border(3.dp, theme.gridBorder)
+                        else Modifier
+                    )
+            ) {
+                val blockSizePx = size.width / boardWidth
+
+                // Draw locked blocks
             board.forEachIndexed { y, row ->
                 row.forEachIndexed { x, color ->
                     if (color != null) {
@@ -166,12 +181,14 @@ fun GameBoard(
                     }
                 }
             }
+            }
         }
     }
 }
 
 /**
- * Renders the next piece preview
+ * Renders the next piece preview (centered, no border or text)
+ * Note: The "NEXT" label and border should be part of the screen_background image
  */
 @Composable
 fun NextPiecePreview(
@@ -199,40 +216,61 @@ fun NextPiecePreview(
         null
     }
 
-    Canvas(
-        modifier = modifier
-            .size(width = blockSize * 4, height = blockSize * 4)
-            .border(2.dp, theme.gridBorder)
+    Box(
+        modifier = modifier.size(width = blockSize * 4, height = blockSize * 4),
+        contentAlignment = Alignment.Center
     ) {
-        nextPiece?.let { piece ->
-            val blockSizePx = blockSize.toPx()
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            nextPiece?.let { piece ->
+                val blockSizePx = blockSize.toPx()
 
-            piece.shape.forEachIndexed { row, line ->
-                line.forEachIndexed { col, cell ->
-                    if (cell != 0) {
-                        if (useGraphics && blocksSpritesheet != null) {
-                            // Draw block from spritesheet
-                            drawBlockFromSpritesheet(
-                                spritesheet = blocksSpritesheet,
-                                tetrominoType = piece.type,
-                                x = col * blockSizePx,
-                                y = row * blockSizePx,
-                                size = blockSizePx
-                            )
-                        } else {
-                            // Fallback to colored rectangles
-                            drawRect(
-                                color = piece.color,
-                                topLeft = Offset(col * blockSizePx, row * blockSizePx),
-                                size = Size(blockSizePx - 2, blockSizePx - 2)
-                            )
-                            // Border
-                            drawRect(
-                                color = theme.blockBorder,
-                                topLeft = Offset(col * blockSizePx, row * blockSizePx),
-                                size = Size(blockSizePx - 2, blockSizePx - 2),
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
-                            )
+                // Calculate bounds of the piece for centering
+                val minCol = piece.shape.indices.minOfOrNull { row ->
+                    piece.shape[row].indexOfFirst { it != 0 }.takeIf { it >= 0 } ?: Int.MAX_VALUE
+                } ?: 0
+                val maxCol = piece.shape.indices.maxOfOrNull { row ->
+                    piece.shape[row].indexOfLast { it != 0 }
+                } ?: 0
+                val minRow = piece.shape.indexOfFirst { row -> row.any { it != 0 } }
+                val maxRow = piece.shape.indexOfLast { row -> row.any { it != 0 } }
+
+                val pieceWidth = (maxCol - minCol + 1) * blockSizePx
+                val pieceHeight = (maxRow - minRow + 1) * blockSizePx
+
+                // Center offset
+                val offsetX = (size.width - pieceWidth) / 2 - minCol * blockSizePx
+                val offsetY = (size.height - pieceHeight) / 2 - minRow * blockSizePx
+
+                piece.shape.forEachIndexed { row, line ->
+                    line.forEachIndexed { col, cell ->
+                        if (cell != 0) {
+                            val x = col * blockSizePx + offsetX
+                            val y = row * blockSizePx + offsetY
+
+                            if (useGraphics && blocksSpritesheet != null) {
+                                // Draw block from spritesheet
+                                drawBlockFromSpritesheet(
+                                    spritesheet = blocksSpritesheet,
+                                    tetrominoType = piece.type,
+                                    x = x,
+                                    y = y,
+                                    size = blockSizePx
+                                )
+                            } else {
+                                // Fallback to colored rectangles
+                                drawRect(
+                                    color = piece.color,
+                                    topLeft = Offset(x, y),
+                                    size = Size(blockSizePx - 2, blockSizePx - 2)
+                                )
+                                // Border
+                                drawRect(
+                                    color = theme.blockBorder,
+                                    topLeft = Offset(x, y),
+                                    size = Size(blockSizePx - 2, blockSizePx - 2),
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
+                                )
+                            }
                         }
                     }
                 }

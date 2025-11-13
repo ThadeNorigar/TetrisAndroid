@@ -1,5 +1,6 @@
 package com.tetris.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -8,6 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,7 +23,6 @@ import com.tetris.ui.components.GameBoard
 import com.tetris.ui.components.GameControls
 import com.tetris.ui.components.NextPiecePreview
 import com.tetris.ui.theme.TetrisTheme
-import androidx.compose.ui.graphics.Color
 
 /**
  * Main game screen
@@ -40,13 +44,33 @@ fun GameScreen(
     onPause: () -> Unit,
     onResume: () -> Unit,
     onBackToMenu: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useGraphics: Boolean = true
 ) {
+    val context = LocalContext.current
+
+    // Load fullscreen background image if available
+    val backgroundResourceId = try {
+        context.resources.getIdentifier("screen_background", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(theme.background)
     ) {
+        // Draw fullscreen background image if available
+        if (useGraphics && backgroundResourceId != 0) {
+            Image(
+                painter = painterResource(id = backgroundResourceId),
+                contentDescription = "Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
         when (gameState) {
             is GameState.Playing -> {
                 PlayingScreen(
@@ -61,7 +85,8 @@ fun GameScreen(
                     onMoveDown = onMoveDown,
                     onRotate = onRotate,
                     onHardDrop = onHardDrop,
-                    onPause = onPause
+                    onPause = onPause,
+                    useGraphics = useGraphics
                 )
             }
             is GameState.Paused -> {
@@ -99,7 +124,8 @@ private fun PlayingScreen(
     onMoveDown: () -> Unit,
     onRotate: () -> Unit,
     onHardDrop: () -> Unit,
-    onPause: () -> Unit
+    onPause: () -> Unit,
+    useGraphics: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -119,7 +145,8 @@ private fun PlayingScreen(
                 board = board,
                 currentPiece = currentPiece,
                 theme = theme,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                useGraphics = useGraphics
             )
         }
 
@@ -133,21 +160,15 @@ private fun PlayingScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Next piece preview
+            // Next piece preview (text and border are in background image)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = "NEXT",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textSecondary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
                 NextPiecePreview(
                     nextPiece = nextPiece,
-                    theme = theme
+                    theme = theme,
+                    useGraphics = useGraphics
                 )
             }
 
@@ -206,16 +227,16 @@ private fun PlayingScreen(
                 }
             }
 
-            // Pause button
+            // Hard Drop button
             Button(
-                onClick = onPause,
+                onClick = onHardDrop,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = theme.gridBorder,
                     contentColor = theme.textPrimary
                 )
             ) {
-                Text("⏸", fontSize = 20.sp)
+                Text("⬇", fontSize = 20.sp)
             }
         }
 
