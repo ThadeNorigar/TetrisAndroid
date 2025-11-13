@@ -1,28 +1,25 @@
 package com.tetris.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tetris.ui.theme.TetrisTheme
-import kotlin.math.abs
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
- * Touch controls for the game
+ * Simplified touch controls for the game - 4 buttons only
  */
 @Composable
 fun GameControls(
@@ -34,122 +31,47 @@ fun GameControls(
     onHardDrop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var dragStart by remember { mutableStateOf<Offset?>(null) }
-    var hasSwiped by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        dragStart = offset
-                        hasSwiped = false
-                    },
-                    onDrag = { change, dragAmount ->
-                        if (!hasSwiped) {
-                            val start = dragStart ?: return@detectDragGestures
-                            val current = change.position
-                            val dx = current.x - start.x
-                            val dy = current.y - start.y
-
-                            // Swipe threshold
-                            if (abs(dx) > 50 || abs(dy) > 50) {
-                                hasSwiped = true
-                                when {
-                                    abs(dx) > abs(dy) -> {
-                                        if (dx > 0) onMoveRight() else onMoveLeft()
-                                    }
-                                    dy > 0 -> onMoveDown()
-                                    else -> onRotate()
-                                }
-                            }
-                        }
-                    },
-                    onDragEnd = {
-                        dragStart = null
-                        hasSwiped = false
-                    }
-                )
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        onRotate()
-                    },
-                    onDoubleTap = {
-                        onHardDrop()
-                    }
-                )
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "👆 Tap: Rotate | ⬆️ Swipe Up: Rotate",
-            color = theme.textSecondary,
-            fontSize = 12.sp
-        )
-        Text(
-            text = "⬅️➡️ Swipe: Move | ⬇️ Swipe Down: Drop",
-            color = theme.textSecondary,
-            fontSize = 12.sp
-        )
-        Text(
-            text = "👆👆 Double Tap: Hard Drop",
-            color = theme.textHighlight,
-            fontSize = 12.sp
+        // Left button
+        ControlButton(
+            text = "◀",
+            onClick = onMoveLeft,
+            theme = theme,
+            modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
-        // Button controls (alternative)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left button
-            ControlButton(
-                text = "◀",
-                onClick = onMoveLeft,
-                theme = theme
-            )
+        // Down button with hold functionality
+        HoldableDownButton(
+            theme = theme,
+            onMoveDown = onMoveDown,
+            modifier = Modifier.weight(1f)
+        )
 
-            // Rotate button
-            ControlButton(
-                text = "🔄",
-                onClick = onRotate,
-                theme = theme
-            )
+        Spacer(modifier = Modifier.width(8.dp))
 
-            // Right button
-            ControlButton(
-                text = "▶",
-                onClick = onMoveRight,
-                theme = theme
-            )
-        }
+        // Rotate button
+        ControlButton(
+            text = "⟲",
+            onClick = onRotate,
+            theme = theme,
+            modifier = Modifier.weight(1f)
+        )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Down button
-            ControlButton(
-                text = "▼",
-                onClick = onMoveDown,
-                theme = theme
-            )
+        Spacer(modifier = Modifier.width(8.dp))
 
-            // Hard drop button
-            ControlButton(
-                text = "⬇",
-                onClick = onHardDrop,
-                theme = theme,
-                highlighted = true
-            )
-        }
+        // Right button
+        ControlButton(
+            text = "▶",
+            onClick = onMoveRight,
+            theme = theme,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -158,21 +80,72 @@ private fun ControlButton(
     text: String,
     onClick: () -> Unit,
     theme: TetrisTheme,
-    highlighted: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.size(64.dp),
-        shape = CircleShape,
+        modifier = modifier
+            .height(72.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (highlighted) theme.textHighlight else theme.gridBorder,
-            contentColor = if (highlighted) theme.background else theme.textPrimary
+            containerColor = theme.gridBorder,
+            contentColor = theme.textPrimary
         )
     ) {
         Text(
             text = text,
-            fontSize = 24.sp
+            fontSize = 32.sp
+        )
+    }
+}
+
+@Composable
+private fun HoldableDownButton(
+    theme: TetrisTheme,
+    onMoveDown: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var isPressed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            // Initial delay before fast drop starts
+            delay(200)
+            // Continue fast dropping while held
+            while (isPressed) {
+                onMoveDown()
+                delay(50) // Fast drop interval
+            }
+        }
+    }
+
+    Button(
+        onClick = {
+            // Single tap also moves down once
+            if (!isPressed) {
+                onMoveDown()
+            }
+        },
+        modifier = modifier
+            .height(72.dp)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    isPressed = true
+                    waitForUpOrCancellation()
+                    isPressed = false
+                }
+            },
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isPressed) theme.textHighlight else theme.gridBorder,
+            contentColor = if (isPressed) theme.background else theme.textPrimary
+        )
+    ) {
+        Text(
+            text = "▼",
+            fontSize = 32.sp
         )
     }
 }
