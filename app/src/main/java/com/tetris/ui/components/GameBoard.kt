@@ -83,33 +83,25 @@ fun GameBoard(
             calculatedWidth to maxHeight
         }
 
-        Box(
-            modifier = Modifier.size(width = finalWidth, height = finalHeight),
-            contentAlignment = Alignment.Center
+        Canvas(
+            modifier = Modifier
+                .size(width = finalWidth, height = finalHeight)
+                .let {
+                    if (boardFrameDrawable == null) it.border(3.dp, theme.gridBorder)
+                    else it
+                }
         ) {
+            val blockSizePx = size.width / boardWidth
+
             // Draw board frame if available
-            if (boardFrameDrawable != null) {
-                androidx.compose.foundation.Canvas(
-                    modifier = Modifier.matchParentSize()
-                ) {
-                    boardFrameDrawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
-                    drawContext.canvas.nativeCanvas.apply {
-                        boardFrameDrawable.draw(this)
-                    }
+            boardFrameDrawable?.let { drawable ->
+                drawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
+                drawContext.canvas.nativeCanvas.apply {
+                    drawable.draw(this)
                 }
             }
 
-            Canvas(
-                modifier = Modifier
-                    .matchParentSize()
-                    .then(
-                        if (boardFrameDrawable == null) Modifier.border(3.dp, theme.gridBorder)
-                        else Modifier
-                    )
-            ) {
-                val blockSizePx = size.width / boardWidth
-
-                // Draw locked blocks
+            // Draw locked blocks
             board.forEachIndexed { y, row ->
                 row.forEachIndexed { x, color ->
                     if (color != null) {
@@ -180,7 +172,6 @@ fun GameBoard(
                         }
                     }
                 }
-            }
             }
         }
     }
