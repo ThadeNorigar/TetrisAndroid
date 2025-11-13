@@ -3,20 +3,27 @@
     PLATZHALTER: Ersetzen Sie diese Datei durch board_frame.png
 
     Dies ist der Rahmen für das Spielfeld (10x20 Blöcke).
+    Der Rahmen wird als OVERLAY über die Blöcke gezeichnet.
 
     Spezifikationen:
-    - Größe: Sollte das Spielfeld umrahmen (Empfehlung: 640 x 1280 px + Rahmendicke)
-    - Format: PNG (empfohlen - unterstützt Transparenz), WebP oder JPG
-    - Der innere transparente Bereich sollte exakt das Spielfeld-Verhältnis haben (10:20)
-    - Der Rahmen wird über das Spielfeld gelegt
+    - Rahmenbreite: 10px auf allen Seiten (links, rechts, oben, unten)
+    - Gesamtgröße: Spielfeld-Größe + 20px Breite + 20px Höhe
+    - Beispiel: Spielfeld 640x1280 px → Rahmen 660x1300 px
+    - Format: PNG (empfohlen - MUSS Transparenz unterstützen), WebP
+
+    Aufbau:
+    - Äußere 10px: Rahmen-Grafik (sichtbar)
+    - Innerer Bereich: TRANSPARENT (damit Blöcke durchscheinen)
+    - Der Rahmen überlappt die äußeren Blöcke um 10px
 
     Design-Tipps:
-    - Kann dekorativ sein (z.B. 3D-Effekt, Neon-Glow, Holz-Textur, etc.)
-    - Sollte nicht zu dick sein (max 20-30px pro Seite empfohlen)
-    - Innerer Bereich muss transparent sein, damit die Blöcke sichtbar bleiben
+    - Der Rahmen kann dekorativ sein (3D-Effekt, Schatten, Glow, Textur, etc.)
+    - Innerer transparenter Bereich ist WICHTIG
+    - Der Rahmen liegt ÜBER den Blöcken (Overlay-Effekt)
+    - Empfehlung: Dickerer Rahmen für bessere Sichtbarkeit (10-15px)
 
     Diese XML-Datei ist nur ein einfacher Platzhalter-Rahmen.
-    Ersetzen Sie sie durch Ihre eigene PNG-Datei für bessere Grafik.
+    Ersetzen Sie sie durch Ihre eigene PNG-Datei mit Transparenz.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
