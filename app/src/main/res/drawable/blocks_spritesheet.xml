@@ -3,12 +3,27 @@
     PLATZHALTER: Ersetzen Sie diese Datei durch blocks_spritesheet.png
 
     Spritesheet-Spezifikationen:
-    - Layout: 7 Blöcke horizontal nebeneinander (I, O, T, S, Z, J, L)
-    - Empfohlene Größe: 448 x 64 px (7 × 64px)
-    - Format: PNG, WebP oder JPG
-    - Jeder Block: 64 x 64 px (oder ein Vielfaches davon)
+    - Layout: 7 Blöcke horizontal nebeneinander in dieser Reihenfolge:
+      Position 0: I-Block (Cyan)
+      Position 1: O-Block (Gelb)
+      Position 2: T-Block (Lila)
+      Position 3: S-Block (Grün)
+      Position 4: Z-Block (Rot)
+      Position 5: J-Block (Blau)
+      Position 6: L-Block (Orange)
 
-    Siehe BLOCKS_SPRITESHEET_README.md für Details
+    - Empfohlene Größen:
+      * 448 x 64 px (7 × 64px pro Block)
+      * 896 x 128 px (7 × 128px pro Block)
+      * 1344 x 192 px (7 × 192px pro Block)
+
+    - Format: PNG (empfohlen), WebP oder JPG
+    - Jeder Block muss gleich groß sein (quadratisch)
+    - Keine Abstände zwischen den Blöcken
+    - Der Code extrahiert automatisch den richtigen Bereich für jeden Block-Typ
+
+    Diese XML-Datei ist nur ein visueller Platzhalter. Für beste Grafik-Qualität
+    ersetzen Sie sie durch eine echte PNG-Datei mit dem gleichen Namen.
 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- I-Block (Cyan) - Position 0 -->
