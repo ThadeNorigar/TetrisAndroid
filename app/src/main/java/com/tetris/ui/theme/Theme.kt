@@ -29,8 +29,8 @@ val MinimalisticTheme = TetrisTheme(
     blockBorder = Color(0xFFFFFFFF),
     textPrimary = Color(0xFFFFFFFF),
     textSecondary = Color(0xFF808080),
-    textHighlight = Color(0xFF32CD32),
-    textDanger = Color(0xFFFF0000),
+    textHighlight = Color(0xFFFFD700), // Gold (war grün)
+    textDanger = Color(0xFFFFD700),    // Gold (war rot)
     overlay = Color(0xFF000000),
     shapeColors = mapOf(
         TetrominoType.I to Color(0xFF00FFFF), // Cyan

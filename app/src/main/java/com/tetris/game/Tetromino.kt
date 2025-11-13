@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Represents a Tetromino piece (the falling blocks in Tetris)
+ * SNES Tetris rotation system implementation
  */
 data class Tetromino(
     val type: TetrominoType,
@@ -14,7 +15,10 @@ data class Tetromino(
 ) {
     /**
      * Rotate the tetromino 90 degrees clockwise
-     * Nintendo Rotation System: I and O pieces have special rotation behavior
+     * SNES Tetris rotation system:
+     * - O piece: Never rotates
+     * - I piece: Rotates on 4x4 field around center
+     * - Other pieces: Rotate on 3x3 field around center
      */
     fun rotated(): Tetromino {
         // O piece doesn't rotate
@@ -22,20 +26,12 @@ data class Tetromino(
 
         val n = shape.size
         val m = shape[0].size
+
+        // Rotate 90 degrees clockwise: transpose and reverse each row
         val rotated = List(m) { col ->
             List(n) { row ->
                 shape[n - 1 - row][col]
             }
-        }
-
-        // I piece has only 2 rotation states (horizontal and vertical)
-        // If rotating back to horizontal from vertical, return original orientation
-        if (type == TetrominoType.I && rotated.size == 1 && rotated[0].size == 4) {
-            // This is the horizontal state - return it as-is
-            return copy(shape = rotated)
-        } else if (type == TetrominoType.I && rotated.size == 4 && rotated[0].size == 1) {
-            // This is the vertical state - return it as-is
-            return copy(shape = rotated)
         }
 
         return copy(shape = rotated)
@@ -44,40 +40,57 @@ data class Tetromino(
     companion object {
         /**
          * Create tetromino with SNES Tetris (Nintendo Rotation System) spawn orientations
+         * All pieces spawn in their "flat" orientation
          */
         fun create(type: TetrominoType, color: Color): Tetromino {
             val shape = when (type) {
-                // I: Spawns horizontal (2 rotation states only)
-                TetrominoType.I -> listOf(listOf(1, 1, 1, 1))
-                // O: Never rotates
+                // I: 4x4 field, horizontal in row 2 (index 1)
+                TetrominoType.I -> listOf(
+                    listOf(0, 0, 0, 0),
+                    listOf(1, 1, 1, 1),
+                    listOf(0, 0, 0, 0),
+                    listOf(0, 0, 0, 0)
+                )
+
+                // O: 2x2, never rotates (not on 3x3 or 4x4 grid)
                 TetrominoType.O -> listOf(
                     listOf(1, 1),
                     listOf(1, 1)
                 )
-                // T: 4 rotation states, centered on middle block
+
+                // T: 3x3 field, spawns pointing up
                 TetrominoType.T -> listOf(
                     listOf(0, 1, 0),
-                    listOf(1, 1, 1)
+                    listOf(1, 1, 1),
+                    listOf(0, 0, 0)
                 )
-                // S: 4 rotation states
+
+                // S: 3x3 field
                 TetrominoType.S -> listOf(
                     listOf(0, 1, 1),
-                    listOf(1, 1, 0)
+                    listOf(1, 1, 0),
+                    listOf(0, 0, 0)
                 )
-                // Z: 4 rotation states
+
+                // Z: 3x3 field
                 TetrominoType.Z -> listOf(
                     listOf(1, 1, 0),
-                    listOf(0, 1, 1)
+                    listOf(0, 1, 1),
+                    listOf(0, 0, 0)
                 )
-                // J: 4 rotation states, centered on middle block
+
+                // J: 3x3 field
                 TetrominoType.J -> listOf(
                     listOf(1, 0, 0),
-                    listOf(1, 1, 1)
+                    listOf(1, 1, 1),
+                    listOf(0, 0, 0)
                 )
-                // L: 4 rotation states, centered on middle block
+
+                // L: 3x3 field
                 TetrominoType.L -> listOf(
                     listOf(0, 0, 1),
-                    listOf(1, 1, 1)
+                    listOf(1, 1, 1),
+                    listOf(0, 0, 0)
                 )
             }
             return Tetromino(type, shape, color, x = 0, y = 0)
