@@ -83,25 +83,31 @@ fun GameBoard(
             calculatedWidth to maxHeight
         }
 
+        // Frame border width: 10dp on each side (20dp total width/height added)
+        val frameBorderSize = 10.dp
+        val frameBorderPx = frameBorderSize.value * density
+
+        // Adjust canvas size to include frame border
+        val canvasWidth = finalWidth + (frameBorderSize * 2)
+        val canvasHeight = finalHeight + (frameBorderSize * 2)
+
         Canvas(
             modifier = Modifier
-                .size(width = finalWidth, height = finalHeight)
+                .size(width = canvasWidth, height = canvasHeight)
                 .let {
                     if (boardFrameDrawable == null) it.border(3.dp, theme.gridBorder)
                     else it
                 }
         ) {
-            val blockSizePx = size.width / boardWidth
+            // Calculate block size based on inner area (without frame)
+            val innerWidth = size.width - (frameBorderPx * 2)
+            val blockSizePx = innerWidth / boardWidth
 
-            // Draw board frame if available
-            boardFrameDrawable?.let { drawable ->
-                drawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
-                drawContext.canvas.nativeCanvas.apply {
-                    drawable.draw(this)
-                }
-            }
+            // Offset for drawing blocks (frame border)
+            val offsetX = frameBorderPx
+            val offsetY = frameBorderPx
 
-            // Draw locked blocks
+            // Draw locked blocks (with offset for frame border)
             board.forEachIndexed { y, row ->
                 row.forEachIndexed { x, color ->
                     if (color != null) {
@@ -113,21 +119,21 @@ fun GameBoard(
                             drawBlockFromSpritesheet(
                                 spritesheet = blocksSpritesheet,
                                 tetrominoType = tetrominoType,
-                                x = x * blockSizePx,
-                                y = y * blockSizePx,
+                                x = x * blockSizePx + offsetX,
+                                y = y * blockSizePx + offsetY,
                                 size = blockSizePx
                             )
                         } else {
                             // Fallback to colored rectangles
                             drawRect(
                                 color = color,
-                                topLeft = Offset(x * blockSizePx, y * blockSizePx),
+                                topLeft = Offset(x * blockSizePx + offsetX, y * blockSizePx + offsetY),
                                 size = Size(blockSizePx - 2, blockSizePx - 2)
                             )
                             // Border
                             drawRect(
                                 color = theme.blockBorder,
-                                topLeft = Offset(x * blockSizePx, y * blockSizePx),
+                                topLeft = Offset(x * blockSizePx + offsetX, y * blockSizePx + offsetY),
                                 size = Size(blockSizePx - 2, blockSizePx - 2),
                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
                             )
@@ -149,21 +155,21 @@ fun GameBoard(
                                     drawBlockFromSpritesheet(
                                         spritesheet = blocksSpritesheet,
                                         tetrominoType = piece.type,
-                                        x = x * blockSizePx,
-                                        y = y * blockSizePx,
+                                        x = x * blockSizePx + offsetX,
+                                        y = y * blockSizePx + offsetY,
                                         size = blockSizePx
                                     )
                                 } else {
                                     // Fallback to colored rectangles
                                     drawRect(
                                         color = piece.color,
-                                        topLeft = Offset(x * blockSizePx, y * blockSizePx),
+                                        topLeft = Offset(x * blockSizePx + offsetX, y * blockSizePx + offsetY),
                                         size = Size(blockSizePx - 2, blockSizePx - 2)
                                     )
                                     // Border
                                     drawRect(
                                         color = theme.blockBorder,
-                                        topLeft = Offset(x * blockSizePx, y * blockSizePx),
+                                        topLeft = Offset(x * blockSizePx + offsetX, y * blockSizePx + offsetY),
                                         size = Size(blockSizePx - 2, blockSizePx - 2),
                                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
                                     )
@@ -171,6 +177,14 @@ fun GameBoard(
                             }
                         }
                     }
+                }
+            }
+
+            // Draw board frame as overlay (after blocks for overlay effect)
+            boardFrameDrawable?.let { drawable ->
+                drawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
+                drawContext.canvas.nativeCanvas.apply {
+                    drawable.draw(this)
                 }
             }
         }
