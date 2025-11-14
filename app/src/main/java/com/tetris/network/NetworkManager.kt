@@ -113,22 +113,25 @@ class NetworkManager(private val context: Context) {
      * Start discovering available games
      */
     fun startDiscovery() {
+        Log.d(tag, "=== startDiscovery() called ===")
+        Log.d(tag, "Service type to discover: $serviceType")
+
         try {
             val discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(tag, "Discovery start failed: $errorCode")
+                Log.e(tag, "✗ Discovery start FAILED: errorCode=$errorCode, serviceType=$serviceType")
             }
 
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(tag, "Discovery stop failed: $errorCode")
+                Log.e(tag, "✗ Discovery stop FAILED: errorCode=$errorCode, serviceType=$serviceType")
             }
 
             override fun onDiscoveryStarted(serviceType: String) {
-                Log.d(tag, "Discovery started")
+                Log.d(tag, "✓ Discovery STARTED: serviceType=$serviceType")
             }
 
             override fun onDiscoveryStopped(serviceType: String) {
-                Log.d(tag, "Discovery stopped")
+                Log.d(tag, "✓ Discovery STOPPED: serviceType=$serviceType")
             }
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo) {
@@ -405,32 +408,47 @@ class NetworkManager(private val context: Context) {
      * Register NSD service
      */
     private fun registerService(playerName: String) {
+        Log.d(tag, "=== registerService() called ===")
+        Log.d(tag, "Player name: $playerName")
+        Log.d(tag, "Service type: $serviceType")
+        Log.d(tag, "Port: $port")
+
         val serviceInfo = NsdServiceInfo().apply {
             serviceName = playerName
             serviceType = this@NetworkManager.serviceType
             port = this@NetworkManager.port
         }
 
+        Log.d(tag, "ServiceInfo created: name=${serviceInfo.serviceName}, type=${serviceInfo.serviceType}, port=${serviceInfo.port}")
+
         val registrationListener = object : NsdManager.RegistrationListener {
             override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                Log.e(tag, "Service registration failed: $errorCode")
+                Log.e(tag, "✗ Service registration FAILED: errorCode=$errorCode")
+                Log.e(tag, "Failed service name: ${serviceInfo.serviceName}")
             }
 
             override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                Log.e(tag, "Service unregistration failed: $errorCode")
+                Log.e(tag, "✗ Service unregistration FAILED: errorCode=$errorCode")
             }
 
             override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
-                Log.d(tag, "Service registered: ${serviceInfo.serviceName}")
+                Log.d(tag, "✓ Service REGISTERED successfully: ${serviceInfo.serviceName}")
             }
 
             override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
-                Log.d(tag, "Service unregistered")
+                Log.d(tag, "✓ Service UNREGISTERED: ${serviceInfo.serviceName}")
             }
         }
 
         this.registrationListener = registrationListener
-        nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+        try {
+            Log.d(tag, "Calling nsdManager.registerService()...")
+            nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+            Log.d(tag, "✓ nsdManager.registerService() call completed")
+        } catch (e: Exception) {
+            Log.e(tag, "✗ Exception in registerService", e)
+            throw e
+        }
     }
 
     /**
