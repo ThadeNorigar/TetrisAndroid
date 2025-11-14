@@ -2,6 +2,7 @@ package com.tetris.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -309,9 +310,25 @@ private fun GameOverScreen(
     lines: Int,
     highScore: Int,
     theme: TetrisTheme,
-    onBackToMenu: () -> Unit
+    onBackToMenu: () -> Unit,
+    useGraphics: Boolean = true
 ) {
+    val context = LocalContext.current
     val isNewHighScore = score > highScore
+
+    // Load game over background image if available
+    val gameOverBackgroundResourceId = try {
+        context.resources.getIdentifier("game_over_background", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    // Load back to menu button graphics
+    val buttonBackResourceId = try {
+        context.resources.getIdentifier("button_back_to_menu", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
 
     Box(
         modifier = Modifier
@@ -319,6 +336,16 @@ private fun GameOverScreen(
             .background(theme.overlay.copy(alpha = 0.95f)),
         contentAlignment = Alignment.Center
     ) {
+        // Draw fullscreen game over background if available
+        if (useGraphics && gameOverBackgroundResourceId != 0) {
+            Image(
+                painter = painterResource(id = gameOverBackgroundResourceId),
+                contentDescription = "Game Over Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -353,21 +380,39 @@ private fun GameOverScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = onBackToMenu,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.textHighlight,
-                    contentColor = theme.background
-                )
-            ) {
-                Text(
-                    text = "MENU",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            // Back to Menu button with optional graphics
+            if (useGraphics && buttonBackResourceId != 0) {
+                Box(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp)
+                        .clickable(onClick = onBackToMenu),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = buttonBackResourceId),
+                        contentDescription = "Back to Menu",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            } else {
+                Button(
+                    onClick = onBackToMenu,
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = theme.textHighlight,
+                        contentColor = theme.background
+                    )
+                ) {
+                    Text(
+                        text = "MENU",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
