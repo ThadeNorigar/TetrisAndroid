@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class TetrisGame(
     private val colorScheme: Map<TetrominoType, Color>
 ) {
-    private val board = Board()
+    // Make board accessible for multiplayer garbage lines
+    internal val board = Board()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private val _gameState = MutableStateFlow<GameState>(GameState.Menu)
@@ -194,6 +195,28 @@ class TetrisGame(
     fun returnToMenu() {
         gameLoopJob?.cancel()
         _gameState.value = GameState.Menu
+    }
+
+    /**
+     * Add garbage lines to the board (for multiplayer)
+     * Returns true if successful, false if it causes game over
+     */
+    fun addGarbageLines(count: Int, garbageColor: Color = Color(0xFF808080)): Boolean {
+        val success = board.addGarbageLines(count, garbageColor)
+        if (!success) {
+            // Adding garbage caused game over
+            val stats = _stats.value
+            _gameState.value = GameState.GameOver(
+                score = stats.score,
+                level = stats.level,
+                lines = stats.linesCleared
+            )
+            gameLoopJob?.cancel()
+        } else {
+            // Update board state for rendering
+            _boardState.value = board.getGridCopy()
+        }
+        return success
     }
 
     /**

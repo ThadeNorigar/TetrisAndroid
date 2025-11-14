@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import com.tetris.game.GameState
 import com.tetris.ui.GameScreen
 import com.tetris.ui.MenuScreen
+import com.tetris.ui.LobbyScreen
+import com.tetris.ui.MultiplayerGameScreen
 
 /**
  * Main activity for the Tetris game
@@ -39,6 +41,24 @@ fun TetrisApp(viewModel: GameViewModel) {
                 theme = currentTheme,
                 highScore = highScore,
                 onStartGame = { viewModel.startGame() },
+                onVsPlayer = { viewModel.navigateToLobby() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        is ScreenState.Lobby -> {
+            LobbyScreen(
+                theme = currentTheme,
+                onBack = { viewModel.returnToMenu() },
+                onGameStart = { viewModel.navigateToMultiplayerGame() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        is ScreenState.MultiplayerGame -> {
+            MultiplayerGameScreen(
+                theme = currentTheme,
+                onBackToMenu = { viewModel.returnToMenu() },
                 modifier = Modifier.fillMaxSize()
             )
         }

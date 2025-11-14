@@ -119,4 +119,44 @@ class Board(
     fun getGridCopy(): List<List<Color?>> {
         return grid.map { it.toList() }
     }
+
+    /**
+     * Add garbage lines from the bottom (for multiplayer)
+     * Returns true if successful, false if it would cause game over
+     */
+    fun addGarbageLines(count: Int, garbageColor: Color = Color.Gray): Boolean {
+        if (count <= 0) return true
+
+        // Check if adding garbage lines would overflow the board
+        // Count how many rows from the top are empty
+        var emptyRowsFromTop = 0
+        for (y in 0 until height) {
+            if (grid[y].all { it == null }) {
+                emptyRowsFromTop++
+            } else {
+                break
+            }
+        }
+
+        if (emptyRowsFromTop < count) {
+            // Not enough space, would cause game over
+            return false
+        }
+
+        // Remove top rows
+        repeat(count) {
+            grid.removeAt(0)
+        }
+
+        // Add garbage lines at bottom with one random gap per line
+        repeat(count) {
+            val garbageLine = MutableList(width) { garbageColor }
+            // Add a random gap in each garbage line
+            val gapPosition = (0 until width).random()
+            garbageLine[gapPosition] = null
+            grid.add(garbageLine)
+        }
+
+        return true
+    }
 }
