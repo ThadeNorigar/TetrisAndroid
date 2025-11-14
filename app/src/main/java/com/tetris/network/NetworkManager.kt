@@ -33,10 +33,12 @@ class NetworkManager(private val context: Context) {
         isLenient = true
     }
 
+    private var selectorManager: SelectorManager? = null
     private var serverSocket: ServerSocket? = null
     private var clientSocket: Socket? = null
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
+    private var receiveJob: Job? = null
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -64,9 +66,13 @@ class NetworkManager(private val context: Context) {
      */
     suspend fun startHosting(playerName: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            // Initialize SelectorManager if not already created
+            if (selectorManager == null) {
+                selectorManager = SelectorManager(Dispatchers.IO)
+            }
+
             // Start server socket
-            val selectorManager = SelectorManager(Dispatchers.IO)
-            serverSocket = aSocket(selectorManager).tcp().bind(port = port)
+            serverSocket = aSocket(selectorManager!!).tcp().bind(port = port)
 
             Log.d(tag, "Server socket bound to port $port")
 
@@ -182,8 +188,12 @@ class NetworkManager(private val context: Context) {
         try {
             _connectionState.value = ConnectionState.Connecting
 
-            val selectorManager = SelectorManager(Dispatchers.IO)
-            val socket = aSocket(selectorManager).tcp().connect(
+            // Initialize SelectorManager if not already created
+            if (selectorManager == null) {
+                selectorManager = SelectorManager(Dispatchers.IO)
+            }
+
+            val socket = aSocket(selectorManager!!).tcp().connect(
                 remoteAddress = InetSocketAddress(playerInfo.address.hostAddress ?: playerInfo.address.hostName, playerInfo.port)
             )
 
@@ -216,7 +226,11 @@ class NetworkManager(private val context: Context) {
             val jsonString = json.encodeToString(message)
             val messageWithDelimiter = "$jsonString\n"
 
-            socket.openWriteChannel(autoFlush = true).writeStringUtf8(messageWithDelimiter)
+            // Use the channel without explicitly closing it (reuse existing connection channel)
+            socket.openWriteChannel(autoFlush = true).apply {
+                writeStringUtf8(messageWithDelimiter)
+                flush()
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -229,7 +243,10 @@ class NetworkManager(private val context: Context) {
      * Start receiving messages from socket
      */
     private fun startReceivingMessages(socket: Socket) {
-        scope.launch {
+        // Cancel previous receive job if exists
+        receiveJob?.cancel()
+
+        receiveJob = scope.launch {
             try {
                 val receiveChannel = socket.openReadChannel()
 
@@ -338,8 +355,12 @@ class NetworkManager(private val context: Context) {
             clientSocket?.close()
             clientSocket = null
 
-            val selectorManager = SelectorManager(Dispatchers.IO)
-            val socket = aSocket(selectorManager).tcp().connect(
+            // Initialize SelectorManager if not already created
+            if (selectorManager == null) {
+                selectorManager = SelectorManager(Dispatchers.IO)
+            }
+
+            val socket = aSocket(selectorManager!!).tcp().connect(
                 remoteAddress = InetSocketAddress(playerInfo.address.hostAddress ?: playerInfo.address.hostName, playerInfo.port)
             )
 
@@ -427,6 +448,7 @@ class NetworkManager(private val context: Context) {
         scope.launch {
             keepAliveJob?.cancel()
             reconnectJob?.cancel()
+            receiveJob?.cancel()
 
             try {
                 clientSocket?.close()
@@ -452,6 +474,11 @@ class NetworkManager(private val context: Context) {
      */
     fun cleanup() {
         disconnect()
+
+        // Close SelectorManager to free native resources
+        selectorManager?.close()
+        selectorManager = null
+
         scope.cancel()
     }
 }

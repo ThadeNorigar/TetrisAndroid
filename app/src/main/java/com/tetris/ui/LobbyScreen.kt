@@ -76,19 +76,6 @@ class LobbyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getNetworkManager(): NetworkManager = networkManager
-
-    companion object {
-        // Store NetworkManager globally for navigation
-        // In production, use proper dependency injection
-        var sharedNetworkManager: NetworkManager? = null
-    }
-}
-
-/**
- * Extension to get NetworkManager instance
- */
-fun LobbyViewModel.shareNetworkManager() {
-    LobbyViewModel.sharedNetworkManager = getNetworkManager()
 }
 
 /**
@@ -98,7 +85,7 @@ fun LobbyViewModel.shareNetworkManager() {
 fun LobbyScreen(
     theme: TetrisTheme,
     onBack: () -> Unit,
-    onGameStart: () -> Unit,
+    onGameStart: (NetworkManager) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -123,9 +110,8 @@ fun LobbyScreen(
     LaunchedEffect(connectionState) {
         when (connectionState) {
             is ConnectionState.Connected -> {
-                // Both players connected, share NetworkManager and start game
-                viewModel.shareNetworkManager()
-                onGameStart()
+                // Both players connected, pass NetworkManager and start game
+                onGameStart(viewModel.getNetworkManager())
             }
             else -> {}
         }

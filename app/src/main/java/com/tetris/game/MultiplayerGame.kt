@@ -218,10 +218,18 @@ class MultiplayerGameViewModel(
     fun pauseGame() = localGame.pauseGame()
     fun resumeGame() = localGame.resumeGame()
 
-    override fun onCleared() {
-        super.onCleared()
+    /**
+     * Cleanup resources when leaving the game
+     * Can be called manually when returning to menu
+     */
+    fun cleanup() {
         localGame.dispose()
         networkManager.disconnect()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        cleanup()
     }
 }
 
