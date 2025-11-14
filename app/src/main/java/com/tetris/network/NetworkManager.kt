@@ -104,7 +104,8 @@ class NetworkManager(private val context: Context) {
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(tag, "Error starting host", e)
-            Result.failure(e)
+            _connectionState.value = ConnectionState.Error(e.message ?: "Failed to start hosting")
+            return@withContext Result.failure(e)
         }
     }
 
@@ -112,7 +113,8 @@ class NetworkManager(private val context: Context) {
      * Start discovering available games
      */
     fun startDiscovery() {
-        val discoveryListener = object : NsdManager.DiscoveryListener {
+        try {
+            val discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
                 Log.e(tag, "Discovery start failed: $errorCode")
             }
@@ -162,8 +164,12 @@ class NetworkManager(private val context: Context) {
             }
         }
 
-        this.discoveryListener = discoveryListener
-        nsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+            this.discoveryListener = discoveryListener
+            nsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+        } catch (e: Exception) {
+            Log.e(tag, "Error starting discovery", e)
+            _connectionState.value = ConnectionState.Error(e.message ?: "Failed to start discovery")
+        }
     }
 
     /**
