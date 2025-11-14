@@ -86,14 +86,12 @@ fun GameBoard(
             calculatedWidth to maxHeight
         }
 
-        // Frame border width: 10dp on top/left/right, 30dp on bottom
-        val frameBorderTop = 10.dp
-        val frameBorderSide = 10.dp
-        val frameBorderBottom = 30.dp
+        // Frame border width: 10dp on all sides
+        val frameBorderSize = 10.dp
 
         // Adjust canvas size to include frame border
-        val canvasWidth = finalWidth + (frameBorderSide * 2)
-        val canvasHeight = finalHeight + frameBorderTop + frameBorderBottom
+        val canvasWidth = finalWidth + (frameBorderSize * 2)
+        val canvasHeight = finalHeight + (frameBorderSize * 2)
 
         Canvas(
             modifier = Modifier
@@ -104,16 +102,15 @@ fun GameBoard(
                 }
         ) {
             // Convert frame border to pixels
-            val frameBorderSidePx = with(density) { frameBorderSide.toPx() }
-            val frameBorderTopPx = with(density) { frameBorderTop.toPx() }
+            val frameBorderPx = with(density) { frameBorderSize.toPx() }
 
             // Calculate block size based on inner area (without frame)
-            val innerWidth = size.width - (frameBorderSidePx * 2)
+            val innerWidth = size.width - (frameBorderPx * 2)
             val blockSizePx = innerWidth / boardWidth
 
-            // Offset for drawing blocks (frame stays at top)
-            val offsetX = frameBorderSidePx
-            val offsetY = frameBorderTopPx
+            // Offset for drawing blocks (frame border)
+            val offsetX = frameBorderPx
+            val offsetY = frameBorderPx
 
             // Draw locked blocks (with offset for frame border)
             board.forEachIndexed { y, row ->
