@@ -43,6 +43,9 @@ class MultiplayerGameViewModel(
     private val _winner = MutableStateFlow<Winner?>(null)
     val winner: StateFlow<Winner?> = _winner.asStateFlow()
 
+    // Connection state from network manager
+    val connectionState: StateFlow<com.tetris.network.ConnectionState> = networkManager.connectionState
+
     // Track lines cleared to send as garbage
     private var lastLinesCleared = 0
 
@@ -50,6 +53,7 @@ class MultiplayerGameViewModel(
         startGame()
         observeNetworkMessages()
         observeLocalGameState()
+        observeConnectionState()
     }
 
     private fun startGame() {
@@ -91,6 +95,35 @@ class MultiplayerGameViewModel(
         viewModelScope.launch {
             networkManager.receivedMessages.collect { message ->
                 message?.let { handleNetworkMessage(it) }
+            }
+        }
+    }
+
+    private fun observeConnectionState() {
+        viewModelScope.launch {
+            connectionState.collect { state ->
+                when (state) {
+                    is com.tetris.network.ConnectionState.Reconnecting -> {
+                        // Pause game during reconnection
+                        localGame.pauseGame()
+                        Log.d(tag, "Connection lost, reconnecting... (attempt ${state.attempt})")
+                    }
+                    is com.tetris.network.ConnectionState.Connected -> {
+                        // Resume game after reconnection
+                        if (localGame.gameState.value is GameState.Paused) {
+                            localGame.resumeGame()
+                            Log.d(tag, "Connection restored, resuming game")
+                        }
+                    }
+                    is com.tetris.network.ConnectionState.Disconnected -> {
+                        // Connection permanently lost
+                        if (_winner.value == null) {
+                            // If no winner yet, treat as opponent disconnection
+                            _winner.value = Winner.LocalPlayer
+                        }
+                    }
+                    else -> {}
+                }
             }
         }
     }

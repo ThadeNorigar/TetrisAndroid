@@ -17,10 +17,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tetris.game.*
+import com.tetris.network.ConnectionState
 import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.TetrisTheme
 import com.tetris.ui.components.GameBoard
 import com.tetris.ui.components.GameControls
+import androidx.compose.material3.CircularProgressIndicator
 
 /**
  * Multiplayer game screen showing both players' boards side by side
@@ -60,6 +62,7 @@ fun MultiplayerGameScreen(
     val opponentCurrentPiece by viewModel.opponentCurrentPiece.collectAsState()
 
     val winner by viewModel.winner.collectAsState()
+    val connectionState by viewModel.connectionState.collectAsState()
 
     // Show winner dialog
     if (winner != null) {
@@ -236,6 +239,66 @@ fun MultiplayerGameScreen(
                     }
                 }
             }
+        }
+
+        // Reconnection overlay
+        if (connectionState is ConnectionState.Reconnecting) {
+            ReconnectionOverlay(
+                theme = theme,
+                attempt = (connectionState as ConnectionState.Reconnecting).attempt,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
+ * Overlay shown during reconnection attempts
+ */
+@Composable
+private fun ReconnectionOverlay(
+    theme: TetrisTheme,
+    attempt: Int,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .background(theme.background.copy(alpha = 0.9f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                color = theme.textHighlight,
+                modifier = Modifier.size(64.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "CONNECTION LOST",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = theme.textHighlight
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Reconnecting... (Attempt $attempt/5)",
+                fontSize = 16.sp,
+                color = theme.textPrimary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Please wait",
+                fontSize = 14.sp,
+                color = theme.textSecondary
+            )
         }
     }
 }

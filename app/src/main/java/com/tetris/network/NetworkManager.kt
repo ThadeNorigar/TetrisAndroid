@@ -40,6 +40,15 @@ class NetworkManager(private val context: Context) {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    // Reconnection support
+    private var lastConnectedPlayer: PlayerInfo? = null
+    private var isHost: Boolean = false
+    private var hostPlayerName: String? = null
+    private var reconnectAttempts = 0
+    private val maxReconnectAttempts = 5
+    private var keepAliveJob: Job? = null
+    private var reconnectJob: Job? = null
+
     // State flows
     private val _discoveredPlayers = MutableStateFlow<List<PlayerInfo>>(emptyList())
     val discoveredPlayers: StateFlow<List<PlayerInfo>> = _discoveredPlayers
@@ -64,6 +73,8 @@ class NetworkManager(private val context: Context) {
             // Register NSD service
             registerService(playerName)
 
+            isHost = true
+            hostPlayerName = playerName
             _connectionState.value = ConnectionState.Hosting(playerName)
 
             // Wait for client connection
@@ -72,7 +83,9 @@ class NetworkManager(private val context: Context) {
                     val socket = serverSocket?.accept()
                     if (socket != null) {
                         clientSocket = socket
+                        reconnectAttempts = 0
                         _connectionState.value = ConnectionState.Connected
+                        startKeepAlive()
                         startReceivingMessages(socket)
                         Log.d(tag, "Client connected")
                     }
@@ -175,7 +188,11 @@ class NetworkManager(private val context: Context) {
             )
 
             clientSocket = socket
+            lastConnectedPlayer = playerInfo
+            isHost = false
+            reconnectAttempts = 0
             _connectionState.value = ConnectionState.Connected
+            startKeepAlive()
             startReceivingMessages(socket)
 
             Log.d(tag, "Connected to host ${playerInfo.name}")
@@ -230,11 +247,126 @@ class NetworkManager(private val context: Context) {
                     }
                 }
 
-                _connectionState.value = ConnectionState.Disconnected
-                _receivedMessages.value = GameMessage.PlayerDisconnected
+                // Connection lost - attempt reconnection
+                keepAliveJob?.cancel()
+                handleDisconnection()
             } catch (e: Exception) {
                 Log.e(tag, "Error in receive loop", e)
-                _connectionState.value = ConnectionState.Error(e.message ?: "Connection lost")
+                keepAliveJob?.cancel()
+                handleDisconnection()
+            }
+        }
+    }
+
+    /**
+     * Handle disconnection and attempt reconnect
+     */
+    private fun handleDisconnection() {
+        scope.launch {
+            Log.d(tag, "Connection lost, attempting to reconnect...")
+            _connectionState.value = ConnectionState.Reconnecting(reconnectAttempts + 1)
+
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++
+                delay(2000L * reconnectAttempts) // Exponential backoff
+
+                val reconnectSuccess = if (isHost) {
+                    attemptReconnectAsHost()
+                } else {
+                    attemptReconnectAsClient()
+                }
+
+                if (!reconnectSuccess && reconnectAttempts < maxReconnectAttempts) {
+                    // Try again
+                    handleDisconnection()
+                } else if (!reconnectSuccess) {
+                    // Max attempts reached
+                    _connectionState.value = ConnectionState.Disconnected
+                    _receivedMessages.value = GameMessage.PlayerDisconnected
+                    Log.e(tag, "Reconnection failed after $maxReconnectAttempts attempts")
+                }
+            } else {
+                _connectionState.value = ConnectionState.Disconnected
+                _receivedMessages.value = GameMessage.PlayerDisconnected
+            }
+        }
+    }
+
+    /**
+     * Attempt reconnection as host (wait for client to reconnect)
+     */
+    private suspend fun attemptReconnectAsHost(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(tag, "Waiting for client to reconnect (attempt $reconnectAttempts)...")
+
+            // Close old socket
+            clientSocket?.close()
+            clientSocket = null
+
+            // Wait for new connection with timeout
+            withTimeout(10000L) {
+                val socket = serverSocket?.accept()
+                if (socket != null) {
+                    clientSocket = socket
+                    reconnectAttempts = 0
+                    _connectionState.value = ConnectionState.Connected
+                    startKeepAlive()
+                    startReceivingMessages(socket)
+                    Log.d(tag, "Client reconnected successfully")
+                    return@withContext true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            Log.e(tag, "Reconnect as host failed", e)
+            false
+        }
+    }
+
+    /**
+     * Attempt reconnection as client
+     */
+    private suspend fun attemptReconnectAsClient(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val playerInfo = lastConnectedPlayer ?: return@withContext false
+            Log.d(tag, "Attempting to reconnect to ${playerInfo.name} (attempt $reconnectAttempts)...")
+
+            // Close old socket
+            clientSocket?.close()
+            clientSocket = null
+
+            val selectorManager = SelectorManager(Dispatchers.IO)
+            val socket = aSocket(selectorManager).tcp().connect(
+                remoteAddress = InetSocketAddress(playerInfo.address, playerInfo.port)
+            )
+
+            clientSocket = socket
+            reconnectAttempts = 0
+            _connectionState.value = ConnectionState.Connected
+            startKeepAlive()
+            startReceivingMessages(socket)
+            Log.d(tag, "Reconnected successfully to ${playerInfo.name}")
+            true
+        } catch (e: Exception) {
+            Log.e(tag, "Reconnect as client failed", e)
+            false
+        }
+    }
+
+    /**
+     * Start keep-alive ping mechanism
+     */
+    private fun startKeepAlive() {
+        keepAliveJob?.cancel()
+        keepAliveJob = scope.launch {
+            while (isActive) {
+                delay(5000L) // Send ping every 5 seconds
+                try {
+                    sendMessage(GameMessage.Ping(System.currentTimeMillis()))
+                } catch (e: Exception) {
+                    Log.e(tag, "Keep-alive ping failed", e)
+                    break
+                }
             }
         }
     }
@@ -290,6 +422,9 @@ class NetworkManager(private val context: Context) {
      */
     fun disconnect() {
         scope.launch {
+            keepAliveJob?.cancel()
+            reconnectJob?.cancel()
+
             try {
                 clientSocket?.close()
                 serverSocket?.close()
@@ -299,6 +434,8 @@ class NetworkManager(private val context: Context) {
 
             clientSocket = null
             serverSocket = null
+            lastConnectedPlayer = null
+            reconnectAttempts = 0
 
             stopDiscovery()
             unregisterService()
@@ -333,5 +470,6 @@ sealed class ConnectionState {
     data class Hosting(val playerName: String) : ConnectionState()
     object Connecting : ConnectionState()
     object Connected : ConnectionState()
+    data class Reconnecting(val attempt: Int) : ConnectionState()
     data class Error(val message: String) : ConnectionState()
 }
