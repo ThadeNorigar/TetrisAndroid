@@ -57,10 +57,12 @@ fun GameControls(
 
         Spacer(modifier = Modifier.width(4.dp))
 
-        // Down button with hold functionality
-        HoldableDownButton(
+        // Right button
+        ControlButton(
+            text = "▶",
+            buttonType = "button_right",
+            onClick = onMoveRight,
             theme = theme,
-            onMoveDown = onMoveDown,
             useGraphics = useGraphics,
             modifier = Modifier.weight(1f)
         )
@@ -79,23 +81,21 @@ fun GameControls(
 
         Spacer(modifier = Modifier.width(4.dp))
 
-        // Rotate button
-        ControlButton(
-            text = "⟲",
-            buttonType = "button_rotate",
-            onClick = onRotate,
+        // Down button with hold functionality (Soft Drop)
+        HoldableDownButton(
             theme = theme,
+            onMoveDown = onMoveDown,
             useGraphics = useGraphics,
             modifier = Modifier.weight(1f)
         )
 
         Spacer(modifier = Modifier.width(4.dp))
 
-        // Right button
+        // Rotate button
         ControlButton(
-            text = "▶",
-            buttonType = "button_right",
-            onClick = onMoveRight,
+            text = "⟲",
+            buttonType = "button_rotate",
+            onClick = onRotate,
             theme = theme,
             useGraphics = useGraphics,
             modifier = Modifier.weight(1f)
