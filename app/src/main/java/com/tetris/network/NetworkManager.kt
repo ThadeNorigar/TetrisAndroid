@@ -327,8 +327,12 @@ class NetworkManager(private val context: Context) {
      * Attempt reconnection as client
      */
     private suspend fun attemptReconnectAsClient(): Boolean = withContext(Dispatchers.IO) {
+        val playerInfo = lastConnectedPlayer
+        if (playerInfo == null) {
+            return@withContext false
+        }
+
         try {
-            val playerInfo = lastConnectedPlayer ?: return@withContext false
             Log.d(tag, "Attempting to reconnect to ${playerInfo.name} (attempt $reconnectAttempts)...")
 
             // Close old socket
@@ -346,10 +350,10 @@ class NetworkManager(private val context: Context) {
             startKeepAlive()
             startReceivingMessages(socket)
             Log.d(tag, "Reconnected successfully to ${playerInfo.name}")
-            true
+            return@withContext true
         } catch (e: Exception) {
             Log.e(tag, "Reconnect as client failed", e)
-            false
+            return@withContext false
         }
     }
 
