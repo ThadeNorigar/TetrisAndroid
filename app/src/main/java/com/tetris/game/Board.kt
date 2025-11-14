@@ -150,7 +150,7 @@ class Board(
 
         // Add garbage lines at bottom with one random gap per line
         repeat(count) {
-            val garbageLine = MutableList(width) { garbageColor }
+            val garbageLine = MutableList<Color?>(width) { garbageColor }
             // Add a random gap in each garbage line
             val gapPosition = (0 until width).random()
             garbageLine[gapPosition] = null
