@@ -80,18 +80,24 @@ fun GameBoard(
         val calculatedHeight = maxWidth / aspectRatio
         val calculatedWidth = maxHeight * aspectRatio
 
-        val (finalWidth, finalHeight) = if (calculatedHeight <= maxHeight) {
+        val (calculatedFinalWidth, calculatedFinalHeight) = if (calculatedHeight <= maxHeight) {
             maxWidth to calculatedHeight
         } else {
             calculatedWidth to maxHeight
         }
 
-        // Frame border width: 10dp on all sides
-        val frameBorderSize = 10.dp
+        // Reduce board size by 5%
+        val finalWidth = calculatedFinalWidth * 0.95f
+        val finalHeight = calculatedFinalHeight * 0.95f
+
+        // Frame border width: 10dp on top/left/right, 0dp on bottom
+        val frameBorderTop = 10.dp
+        val frameBorderSide = 10.dp
+        val frameBorderBottom = 0.dp
 
         // Adjust canvas size to include frame border
-        val canvasWidth = finalWidth + (frameBorderSize * 2)
-        val canvasHeight = finalHeight + (frameBorderSize * 2)
+        val canvasWidth = finalWidth + (frameBorderSide * 2)
+        val canvasHeight = finalHeight + frameBorderTop + frameBorderBottom
 
         Canvas(
             modifier = Modifier
@@ -102,15 +108,16 @@ fun GameBoard(
                 }
         ) {
             // Convert frame border to pixels
-            val frameBorderPx = with(density) { frameBorderSize.toPx() }
+            val frameBorderTopPx = with(density) { frameBorderTop.toPx() }
+            val frameBorderSidePx = with(density) { frameBorderSide.toPx() }
 
             // Calculate block size based on inner area (without frame)
-            val innerWidth = size.width - (frameBorderPx * 2)
+            val innerWidth = size.width - (frameBorderSidePx * 2)
             val blockSizePx = innerWidth / boardWidth
 
             // Offset for drawing blocks (frame border)
-            val offsetX = frameBorderPx
-            val offsetY = frameBorderPx
+            val offsetX = frameBorderSidePx
+            val offsetY = frameBorderTopPx
 
             // Draw locked blocks (with offset for frame border)
             board.forEachIndexed { y, row ->
