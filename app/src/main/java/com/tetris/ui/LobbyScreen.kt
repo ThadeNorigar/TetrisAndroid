@@ -56,22 +56,43 @@ class LobbyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startHosting() {
+        android.util.Log.d("LobbyViewModel", "=== startHosting() called ===")
+        android.util.Log.d("LobbyViewModel", "Player name: ${_playerName.value}")
         _isHost.value = true
         viewModelScope.launch {
-            val result = networkManager.startHosting(_playerName.value)
-            result.onFailure { error ->
-                android.util.Log.e("LobbyViewModel", "Failed to start hosting", error)
+            android.util.Log.d("LobbyViewModel", "Launching coroutine for startHosting")
+            try {
+                val result = networkManager.startHosting(_playerName.value)
+                result.onSuccess {
+                    android.util.Log.d("LobbyViewModel", "✓ Hosting started successfully")
+                }
+                result.onFailure { error ->
+                    android.util.Log.e("LobbyViewModel", "✗ Failed to start hosting", error)
+                    android.util.Log.e("LobbyViewModel", "Error type: ${error.javaClass.simpleName}")
+                    android.util.Log.e("LobbyViewModel", "Error message: ${error.message}")
+                    android.util.Log.e("LobbyViewModel", "Stack trace:", error)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LobbyViewModel", "✗ Exception in startHosting coroutine", e)
             }
         }
+        android.util.Log.d("LobbyViewModel", "=== startHosting() completed ===")
     }
 
     fun startDiscovery() {
+        android.util.Log.d("LobbyViewModel", "=== startDiscovery() called ===")
         _isHost.value = false
         try {
+            android.util.Log.d("LobbyViewModel", "Calling networkManager.startDiscovery()")
             networkManager.startDiscovery()
+            android.util.Log.d("LobbyViewModel", "✓ Discovery started")
         } catch (e: Exception) {
-            android.util.Log.e("LobbyViewModel", "Failed to start discovery", e)
+            android.util.Log.e("LobbyViewModel", "✗ Failed to start discovery", e)
+            android.util.Log.e("LobbyViewModel", "Error type: ${e.javaClass.simpleName}")
+            android.util.Log.e("LobbyViewModel", "Error message: ${e.message}")
+            android.util.Log.e("LobbyViewModel", "Stack trace:", e)
         }
+        android.util.Log.d("LobbyViewModel", "=== startDiscovery() completed ===")
     }
 
     fun connectToPlayer(playerInfo: PlayerInfo) {
@@ -115,10 +136,13 @@ fun LobbyScreen(
     onGameStart: (NetworkManager) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    android.util.Log.d("LobbyScreen", "=== LobbyScreen composing ===")
+
     val context = LocalContext.current
     val viewModel: LobbyViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                android.util.Log.d("LobbyScreen", "Creating LobbyViewModel")
                 @Suppress("UNCHECKED_CAST")
                 return LobbyViewModel(context.applicationContext as Application) as T
             }
@@ -131,6 +155,10 @@ fun LobbyScreen(
     val isHost by viewModel.isHost.collectAsState()
 
     var uiState by remember { mutableStateOf<LobbyUIState>(LobbyUIState.NameInput) }
+
+    android.util.Log.d("LobbyScreen", "Current UI state: $uiState")
+    android.util.Log.d("LobbyScreen", "Connection state: $connectionState")
+    android.util.Log.d("LobbyScreen", "Is host: $isHost")
 
     // Handle connection state changes
     LaunchedEffect(connectionState) {
@@ -172,14 +200,29 @@ fun LobbyScreen(
                 ModeSelectionScreen(
                     theme = theme,
                     onHostGame = {
-                        viewModel.startHosting()
-                        uiState = LobbyUIState.Hosting
+                        android.util.Log.d("LobbyScreen", ">>> onHostGame callback triggered")
+                        try {
+                            viewModel.startHosting()
+                            android.util.Log.d("LobbyScreen", ">>> Setting uiState to Hosting")
+                            uiState = LobbyUIState.Hosting
+                            android.util.Log.d("LobbyScreen", ">>> UI state changed to Hosting")
+                        } catch (e: Exception) {
+                            android.util.Log.e("LobbyScreen", ">>> Exception in onHostGame", e)
+                        }
                     },
                     onJoinGame = {
-                        viewModel.startDiscovery()
-                        uiState = LobbyUIState.Joining
+                        android.util.Log.d("LobbyScreen", ">>> onJoinGame callback triggered")
+                        try {
+                            viewModel.startDiscovery()
+                            android.util.Log.d("LobbyScreen", ">>> Setting uiState to Joining")
+                            uiState = LobbyUIState.Joining
+                            android.util.Log.d("LobbyScreen", ">>> UI state changed to Joining")
+                        } catch (e: Exception) {
+                            android.util.Log.e("LobbyScreen", ">>> Exception in onJoinGame", e)
+                        }
                     },
                     onBack = {
+                        android.util.Log.d("LobbyScreen", ">>> onBack callback triggered")
                         uiState = LobbyUIState.NameInput
                     }
                 )
@@ -304,58 +347,87 @@ private fun ModeSelectionScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
+        android.util.Log.d("LobbyScreen", "=== Permission callback ===")
+        android.util.Log.d("LobbyScreen", "Permission granted: $isGranted")
         if (isGranted) {
-            android.util.Log.d("LobbyScreen", "NEARBY_WIFI_DEVICES permission granted")
+            android.util.Log.d("LobbyScreen", "✓ NEARBY_WIFI_DEVICES permission granted")
             permissionGranted = true
             // pendingActionType will trigger LaunchedEffect
         } else {
-            android.util.Log.e("LobbyScreen", "NEARBY_WIFI_DEVICES permission denied")
+            android.util.Log.e("LobbyScreen", "✗ NEARBY_WIFI_DEVICES permission denied")
             pendingActionType = null
         }
     }
 
     // Execute pending action when permission is granted
     LaunchedEffect(permissionGranted, pendingActionType) {
+        android.util.Log.d("LobbyScreen", "=== LaunchedEffect triggered ===")
+        android.util.Log.d("LobbyScreen", "permissionGranted: $permissionGranted")
+        android.util.Log.d("LobbyScreen", "pendingActionType: $pendingActionType")
+
         if (permissionGranted && pendingActionType != null) {
-            android.util.Log.d("LobbyScreen", "Executing pending action: $pendingActionType")
+            android.util.Log.d("LobbyScreen", ">>> Executing pending action: $pendingActionType")
             try {
                 when (pendingActionType) {
-                    "host" -> onHostGame()
-                    "join" -> onJoinGame()
+                    "host" -> {
+                        android.util.Log.d("LobbyScreen", ">>> Calling onHostGame()")
+                        onHostGame()
+                        android.util.Log.d("LobbyScreen", ">>> onHostGame() completed")
+                    }
+                    "join" -> {
+                        android.util.Log.d("LobbyScreen", ">>> Calling onJoinGame()")
+                        onJoinGame()
+                        android.util.Log.d("LobbyScreen", ">>> onJoinGame() completed")
+                    }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("LobbyScreen", "Error executing pending action", e)
+                android.util.Log.e("LobbyScreen", "✗ Error executing pending action", e)
+                android.util.Log.e("LobbyScreen", "Error type: ${e.javaClass.simpleName}")
+                android.util.Log.e("LobbyScreen", "Error message: ${e.message}")
+                android.util.Log.e("LobbyScreen", "Stack trace:", e)
             } finally {
+                android.util.Log.d("LobbyScreen", ">>> Clearing pendingActionType")
                 pendingActionType = null
             }
         }
     }
 
     fun checkAndRequestPermission(actionType: String, action: () -> Unit) {
+        android.util.Log.d("LobbyScreen", "=== checkAndRequestPermission($actionType) ===")
+        android.util.Log.d("LobbyScreen", "Android version: ${Build.VERSION.SDK_INT}")
+        android.util.Log.d("LobbyScreen", "Permission granted: $permissionGranted")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (permissionGranted) {
+                android.util.Log.d("LobbyScreen", "Permission already granted, executing action")
                 try {
                     action()
+                    android.util.Log.d("LobbyScreen", "✓ Action executed successfully")
                 } catch (e: Exception) {
-                    android.util.Log.e("LobbyScreen", "Error executing action", e)
+                    android.util.Log.e("LobbyScreen", "✗ Error executing action", e)
                 }
             } else {
+                android.util.Log.d("LobbyScreen", "Permission not granted, requesting...")
                 // Save action type to execute after permission granted
                 pendingActionType = actionType
+                android.util.Log.d("LobbyScreen", "Pending action type set to: $actionType")
                 // Request permission
                 try {
                     permissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+                    android.util.Log.d("LobbyScreen", "✓ Permission launcher triggered")
                 } catch (e: Exception) {
-                    android.util.Log.e("LobbyScreen", "Error requesting permission", e)
+                    android.util.Log.e("LobbyScreen", "✗ Error requesting permission", e)
                     pendingActionType = null
                 }
             }
         } else {
+            android.util.Log.d("LobbyScreen", "Android < 13, no permission needed")
             // No permission needed for older versions
             try {
                 action()
+                android.util.Log.d("LobbyScreen", "✓ Action executed successfully")
             } catch (e: Exception) {
-                android.util.Log.e("LobbyScreen", "Error executing action", e)
+                android.util.Log.e("LobbyScreen", "✗ Error executing action", e)
             }
         }
     }
