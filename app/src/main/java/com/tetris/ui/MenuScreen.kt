@@ -189,22 +189,61 @@ private fun MenuButton(
     onClick: () -> Unit,
     theme: TetrisTheme,
     highlighted: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useGraphics: Boolean = true
 ) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (highlighted) theme.textHighlight else theme.gridBorder,
-            contentColor = if (highlighted) theme.background else theme.textPrimary
-        )
-    ) {
-        Text(
-            text = text,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+    val context = LocalContext.current
+
+    // Load button graphic based on text
+    val buttonType = when (text) {
+        "START GAME" -> "button_start_game"
+        "BACK" -> "button_back"
+        else -> null
+    }
+
+    val buttonResourceId = if (useGraphics && buttonType != null) {
+        try {
+            context.resources.getIdentifier(buttonType, "drawable", context.packageName)
+        } catch (e: Exception) {
+            0
+        }
+    } else {
+        0
+    }
+
+    if (useGraphics && buttonResourceId != 0) {
+        // Use custom graphics
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = buttonResourceId),
+                contentDescription = text,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
+    } else {
+        // Fallback to Material3 button
+        Button(
+            onClick = onClick,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (highlighted) theme.textHighlight else theme.gridBorder,
+                contentColor = if (highlighted) theme.background else theme.textPrimary
+            )
+        ) {
+            Text(
+                text = text,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

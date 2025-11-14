@@ -94,7 +94,8 @@ fun GameScreen(
                 PausedOverlay(
                     theme = theme,
                     onResume = onResume,
-                    onBackToMenu = onBackToMenu
+                    onBackToMenu = onBackToMenu,
+                    useGraphics = useGraphics
                 )
             }
             is GameState.GameOver -> {
@@ -104,7 +105,8 @@ fun GameScreen(
                     lines = gameState.lines,
                     highScore = highScore,
                     theme = theme,
-                    onBackToMenu = onBackToMenu
+                    onBackToMenu = onBackToMenu,
+                    useGraphics = useGraphics
                 )
             }
             else -> {}
@@ -248,8 +250,24 @@ private fun PlayingScreen(
 private fun PausedOverlay(
     theme: TetrisTheme,
     onResume: () -> Unit,
-    onBackToMenu: () -> Unit
+    onBackToMenu: () -> Unit,
+    useGraphics: Boolean = true
 ) {
+    val context = LocalContext.current
+
+    // Load button graphics
+    val buttonResumeResourceId = try {
+        context.resources.getIdentifier("button_resume", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    val buttonMenuResourceId = try {
+        context.resources.getIdentifier("button_menu", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -267,37 +285,73 @@ private fun PausedOverlay(
                 color = theme.textHighlight
             )
 
-            Button(
-                onClick = onResume,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.textHighlight,
-                    contentColor = theme.background
-                )
-            ) {
-                Text(
-                    text = "RESUME",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            // Resume button
+            if (useGraphics && buttonResumeResourceId != 0) {
+                Box(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp)
+                        .clickable(onClick = onResume),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = buttonResumeResourceId),
+                        contentDescription = "Resume",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            } else {
+                Button(
+                    onClick = onResume,
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = theme.textHighlight,
+                        contentColor = theme.background
+                    )
+                ) {
+                    Text(
+                        text = "RESUME",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
-            Button(
-                onClick = onBackToMenu,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.gridBorder,
-                    contentColor = theme.textPrimary
-                )
-            ) {
-                Text(
-                    text = "MENU",
-                    fontSize = 20.sp
-                )
+            // Menu button
+            if (useGraphics && buttonMenuResourceId != 0) {
+                Box(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp)
+                        .clickable(onClick = onBackToMenu),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = buttonMenuResourceId),
+                        contentDescription = "Menu",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            } else {
+                Button(
+                    onClick = onBackToMenu,
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = theme.gridBorder,
+                        contentColor = theme.textPrimary
+                    )
+                ) {
+                    Text(
+                        text = "MENU",
+                        fontSize = 20.sp
+                    )
+                }
             }
         }
     }
