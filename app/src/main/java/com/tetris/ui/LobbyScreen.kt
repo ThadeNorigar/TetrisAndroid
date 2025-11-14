@@ -291,37 +291,65 @@ private fun ModeSelectionScreen(
         )
     }
 
-    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var pendingActionType by remember { mutableStateOf<String?>(null) }
 
     // Permission launcher for Android 13+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        permissionGranted = isGranted
         if (isGranted) {
             android.util.Log.d("LobbyScreen", "NEARBY_WIFI_DEVICES permission granted")
-            // Execute pending action
-            pendingAction?.invoke()
-            pendingAction = null
+            permissionGranted = true
+            // pendingActionType will trigger LaunchedEffect
         } else {
             android.util.Log.e("LobbyScreen", "NEARBY_WIFI_DEVICES permission denied")
-            pendingAction = null
+            pendingActionType = null
         }
     }
 
-    fun checkAndRequestPermission(action: () -> Unit) {
+    // Execute pending action when permission is granted
+    LaunchedEffect(permissionGranted, pendingActionType) {
+        if (permissionGranted && pendingActionType != null) {
+            android.util.Log.d("LobbyScreen", "Executing pending action: $pendingActionType")
+            try {
+                when (pendingActionType) {
+                    "host" -> onHostGame()
+                    "join" -> onJoinGame()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LobbyScreen", "Error executing pending action", e)
+            } finally {
+                pendingActionType = null
+            }
+        }
+    }
+
+    fun checkAndRequestPermission(actionType: String, action: () -> Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (permissionGranted) {
-                action()
+                try {
+                    action()
+                } catch (e: Exception) {
+                    android.util.Log.e("LobbyScreen", "Error executing action", e)
+                }
             } else {
-                // Save action to execute after permission granted
-                pendingAction = action
+                // Save action type to execute after permission granted
+                pendingActionType = actionType
                 // Request permission
-                permissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+                try {
+                    permissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+                } catch (e: Exception) {
+                    android.util.Log.e("LobbyScreen", "Error requesting permission", e)
+                    pendingActionType = null
+                }
             }
         } else {
             // No permission needed for older versions
-            action()
+            try {
+                action()
+            } catch (e: Exception) {
+                android.util.Log.e("LobbyScreen", "Error executing action", e)
+            }
         }
     }
 
@@ -340,7 +368,7 @@ private fun ModeSelectionScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = { checkAndRequestPermission(onHostGame) },
+            onClick = { checkAndRequestPermission("host", onHostGame) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = theme.textHighlight,
@@ -353,7 +381,7 @@ private fun ModeSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { checkAndRequestPermission(onJoinGame) },
+            onClick = { checkAndRequestPermission("join", onJoinGame) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = theme.textHighlight,
