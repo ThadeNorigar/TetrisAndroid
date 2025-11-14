@@ -120,8 +120,15 @@ fun LobbyScreen(
     val connectionState by viewModel.connectionState.collectAsState()
     val isHost by viewModel.isHost.collectAsState()
 
-    var showNameInput by remember { mutableStateOf(true) }
-    var showModeSelection by remember { mutableStateOf(false) }
+    // UI state management
+    sealed class LobbyUIState {
+        object NameInput : LobbyUIState()
+        object ModeSelection : LobbyUIState()
+        object Hosting : LobbyUIState()
+        object Joining : LobbyUIState()
+    }
+
+    var uiState by remember { mutableStateOf<LobbyUIState>(LobbyUIState.NameInput) }
 
     // Handle connection state changes
     LaunchedEffect(connectionState) {
@@ -146,39 +153,37 @@ fun LobbyScreen(
             .background(theme.background)
             .padding(32.dp)
     ) {
-        when {
-            showNameInput -> {
+        when (uiState) {
+            is LobbyUIState.NameInput -> {
                 NameInputScreen(
                     theme = theme,
                     playerName = playerName,
                     onNameChange = { viewModel.setPlayerName(it) },
                     onContinue = {
-                        showNameInput = false
-                        showModeSelection = true
+                        uiState = LobbyUIState.ModeSelection
                     },
                     onBack = onBack
                 )
             }
 
-            showModeSelection -> {
+            is LobbyUIState.ModeSelection -> {
                 ModeSelectionScreen(
                     theme = theme,
                     onHostGame = {
                         viewModel.startHosting()
-                        showModeSelection = false
+                        uiState = LobbyUIState.Hosting
                     },
                     onJoinGame = {
                         viewModel.startDiscovery()
-                        showModeSelection = false
+                        uiState = LobbyUIState.Joining
                     },
                     onBack = {
-                        showModeSelection = false
-                        showNameInput = true
+                        uiState = LobbyUIState.NameInput
                     }
                 )
             }
 
-            isHost && connectionState is ConnectionState.Hosting -> {
+            is LobbyUIState.Hosting -> {
                 HostingScreen(
                     theme = theme,
                     playerName = playerName,
@@ -189,7 +194,7 @@ fun LobbyScreen(
                 )
             }
 
-            !isHost -> {
+            is LobbyUIState.Joining -> {
                 JoinGameScreen(
                     theme = theme,
                     discoveredPlayers = discoveredPlayers,
@@ -197,7 +202,7 @@ fun LobbyScreen(
                     onPlayerSelected = { viewModel.connectToPlayer(it) },
                     onBack = {
                         viewModel.cancelAndGoBack()
-                        showModeSelection = true
+                        uiState = LobbyUIState.ModeSelection
                     }
                 )
             }
