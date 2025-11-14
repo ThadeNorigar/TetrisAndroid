@@ -51,21 +51,22 @@ fun TetrisApp(viewModel: GameViewModel) {
             LobbyScreen(
                 theme = currentTheme,
                 onBack = { viewModel.returnToMenu() },
-                onGameStart = { viewModel.navigateToMultiplayerGame() },
+                onGameStart = { networkManager ->
+                    viewModel.navigateToMultiplayerGame(networkManager)
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
 
         is ScreenState.MultiplayerGame -> {
-            // Get NetworkManager from LobbyViewModel
-            val networkManager = LobbyViewModel.sharedNetworkManager
+            // Get NetworkManager from GameViewModel
+            val networkManager = viewModel.networkManager
             if (networkManager != null) {
                 MultiplayerGameScreen(
                     theme = currentTheme,
                     networkManager = networkManager,
                     onBackToMenu = {
-                        // Clean up
-                        LobbyViewModel.sharedNetworkManager = null
+                        viewModel.clearNetworkManager()
                         viewModel.returnToMenu()
                     },
                     modifier = Modifier.fillMaxSize()

@@ -8,6 +8,7 @@ import com.tetris.game.GameState
 import com.tetris.game.GameStats
 import com.tetris.game.Tetromino
 import com.tetris.game.TetrisGame
+import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,6 +35,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // Game instance
     private var game: TetrisGame? = null
+
+    // Network manager for multiplayer
+    private var _networkManager: NetworkManager? = null
+    val networkManager: NetworkManager?
+        get() = _networkManager
 
     // Game state flows
     val gameState: StateFlow<GameState> = MutableStateFlow(GameState.Menu)
@@ -167,15 +173,25 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Navigate to multiplayer game
+     * Navigate to multiplayer game with NetworkManager
      */
-    fun navigateToMultiplayerGame() {
+    fun navigateToMultiplayerGame(networkManager: NetworkManager) {
+        _networkManager = networkManager
         _screenState.value = ScreenState.MultiplayerGame
+    }
+
+    /**
+     * Clear network manager when leaving multiplayer
+     */
+    fun clearNetworkManager() {
+        _networkManager = null
     }
 
     override fun onCleared() {
         super.onCleared()
         game?.dispose()
+        _networkManager?.cleanup()
+        _networkManager = null
     }
 }
 

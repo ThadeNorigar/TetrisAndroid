@@ -71,7 +71,7 @@ fun MultiplayerGameScreen(
             localStats = localStats,
             theme = theme,
             onBackToMenu = {
-                viewModel.onCleared()
+                viewModel.cleanup()
                 onBackToMenu()
             }
         )
@@ -226,7 +226,7 @@ fun MultiplayerGameScreen(
 
                     Button(
                         onClick = {
-                            viewModel.onCleared()
+                            viewModel.cleanup()
                             onBackToMenu()
                         },
                         colors = ButtonDefaults.buttonColors(
