@@ -11,6 +11,7 @@ import com.tetris.game.GameState
 import com.tetris.ui.GameScreen
 import com.tetris.ui.MenuScreen
 import com.tetris.ui.LobbyScreen
+import com.tetris.ui.LobbyViewModel
 import com.tetris.ui.MultiplayerGameScreen
 
 /**
@@ -56,11 +57,23 @@ fun TetrisApp(viewModel: GameViewModel) {
         }
 
         is ScreenState.MultiplayerGame -> {
-            MultiplayerGameScreen(
-                theme = currentTheme,
-                onBackToMenu = { viewModel.returnToMenu() },
-                modifier = Modifier.fillMaxSize()
-            )
+            // Get NetworkManager from LobbyViewModel
+            val networkManager = LobbyViewModel.sharedNetworkManager
+            if (networkManager != null) {
+                MultiplayerGameScreen(
+                    theme = currentTheme,
+                    networkManager = networkManager,
+                    onBackToMenu = {
+                        // Clean up
+                        LobbyViewModel.sharedNetworkManager = null
+                        viewModel.returnToMenu()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Fallback if no network manager (shouldn't happen)
+                viewModel.returnToMenu()
+            }
         }
 
         is ScreenState.Game -> {

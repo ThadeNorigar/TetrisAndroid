@@ -17,9 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tetris.game.*
+import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.TetrisTheme
-import com.tetris.ui.components.BoardView
-import com.tetris.ui.components.PiecePreview
+import com.tetris.ui.components.GameBoard
+import com.tetris.ui.components.GameControls
 
 /**
  * Multiplayer game screen showing both players' boards side by side
@@ -27,126 +28,213 @@ import com.tetris.ui.components.PiecePreview
 @Composable
 fun MultiplayerGameScreen(
     theme: TetrisTheme,
+    networkManager: NetworkManager,
     onBackToMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Get NetworkManager from LobbyViewModel (passed through navigation)
     val context = LocalContext.current
-    // For now, we'll create a simplified version without proper DI
-    // In production, you'd use proper dependency injection
+
+    // Create ViewModel with NetworkManager
+    val viewModel: MultiplayerGameViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return MultiplayerGameViewModel(
+                    context.applicationContext as Application,
+                    networkManager,
+                    theme
+                ) as T
+            }
+        }
+    )
+
+    // Collect game states
+    val localGameState by viewModel.localGame.gameState.collectAsState()
+    val localStats by viewModel.localGame.stats.collectAsState()
+    val localBoard by viewModel.localGame.boardState.collectAsState()
+    val localCurrentPiece by viewModel.localGame.currentPiece.collectAsState()
+    val localLineClearAnimation by viewModel.localGame.lineClearAnimation.collectAsState()
+
+    val opponentStats by viewModel.opponentStats.collectAsState()
+    val opponentBoard by viewModel.opponentBoardState.collectAsState()
+    val opponentCurrentPiece by viewModel.opponentCurrentPiece.collectAsState()
+
+    val winner by viewModel.winner.collectAsState()
+
+    // Show winner dialog
+    if (winner != null) {
+        MultiplayerGameOverDialog(
+            winner = winner!!,
+            localStats = localStats,
+            theme = theme,
+            onBackToMenu = {
+                viewModel.onCleared()
+                onBackToMenu()
+            }
+        )
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(theme.background)
     ) {
-        Text(
-            text = "MULTIPLAYER GAME",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = theme.textHighlight,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 48.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Left side - Local Player
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Title
+            Text(
+                text = "VS PLAYER",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = theme.textHighlight,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 8.dp, bottom = 4.dp)
+            )
+
+            // Boards Row
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = "YOU",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textHighlight
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Simplified board view
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(0.5f)
-                        .background(theme.gridBorder.copy(alpha = 0.3f))
+                // Local Player (Left)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Score: 0\nLevel: 1\nLines: 0",
-                        fontSize = 10.sp,
-                        color = theme.textPrimary,
+                        text = "YOU",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.textHighlight,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    // Stats
+                    MiniStatsDisplay(
+                        stats = localStats,
+                        theme = theme,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    // Board
+                    GameBoard(
+                        board = localBoard,
+                        currentPiece = localCurrentPiece,
+                        lineClearAnimation = localLineClearAnimation,
+                        theme = theme,
+                        useGraphics = false,
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .aspectRatio(0.5f)
+                    )
+                }
+
+                // Opponent Player (Right)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "OPPONENT",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.textSecondary,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    // Stats
+                    MiniStatsDisplay(
+                        stats = opponentStats,
+                        theme = theme,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    // Board (read-only, no current piece animation)
+                    GameBoard(
+                        board = opponentBoard,
+                        currentPiece = null, // We don't sync piece positions in real-time
+                        lineClearAnimation = emptySet(),
+                        theme = theme,
+                        useGraphics = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(0.5f)
                     )
                 }
             }
 
-            // Right side - Opponent
+            // Controls
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = "OPPONENT",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textSecondary
-                )
+                // Game controls
+                if (localGameState is GameState.Playing) {
+                    GameControls(
+                        theme = theme,
+                        onMoveLeft = { viewModel.moveLeft() },
+                        onMoveRight = { viewModel.moveRight() },
+                        onMoveDown = { viewModel.moveDown() },
+                        onRotate = { viewModel.rotatePiece() },
+                        onHardDrop = { viewModel.hardDrop() },
+                        useGraphics = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Simplified opponent board view
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(0.5f)
-                        .background(theme.gridBorder.copy(alpha = 0.3f))
+                // Menu buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text(
-                        text = "Score: 0\nLevel: 1\nLines: 0",
-                        fontSize = 10.sp,
-                        color = theme.textPrimary,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(8.dp)
-                    )
+                    if (localGameState is GameState.Playing) {
+                        Button(
+                            onClick = { viewModel.pauseGame() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = theme.gridBorder,
+                                contentColor = theme.textPrimary
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("PAUSE", fontSize = 14.sp)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                    } else if (localGameState is GameState.Paused) {
+                        Button(
+                            onClick = { viewModel.resumeGame() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = theme.textHighlight,
+                                contentColor = theme.background
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("RESUME", fontSize = 14.sp)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.onCleared()
+                            onBackToMenu()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = theme.gridBorder,
+                            contentColor = theme.textPrimary
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("QUIT", fontSize = 14.sp)
+                    }
                 }
-            }
-        }
-
-        // Controls at bottom
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = { /* Pause */ },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.gridBorder,
-                    contentColor = theme.textPrimary
-                )
-            ) {
-                Text("PAUSE", fontSize = 12.sp)
-            }
-
-            Button(
-                onClick = onBackToMenu,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.gridBorder,
-                    contentColor = theme.textPrimary
-                )
-            ) {
-                Text("QUIT", fontSize = 12.sp)
             }
         }
     }

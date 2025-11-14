@@ -76,6 +76,19 @@ class LobbyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getNetworkManager(): NetworkManager = networkManager
+
+    companion object {
+        // Store NetworkManager globally for navigation
+        // In production, use proper dependency injection
+        var sharedNetworkManager: NetworkManager? = null
+    }
+}
+
+/**
+ * Extension to get NetworkManager instance
+ */
+fun LobbyViewModel.shareNetworkManager() {
+    LobbyViewModel.sharedNetworkManager = getNetworkManager()
 }
 
 /**
@@ -110,7 +123,8 @@ fun LobbyScreen(
     LaunchedEffect(connectionState) {
         when (connectionState) {
             is ConnectionState.Connected -> {
-                // Both players connected, start game
+                // Both players connected, share NetworkManager and start game
+                viewModel.shareNetworkManager()
                 onGameStart()
             }
             else -> {}
