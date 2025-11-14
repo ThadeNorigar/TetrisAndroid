@@ -41,6 +41,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val currentPiece: StateFlow<Tetromino?> = MutableStateFlow(null)
     val nextPiece: StateFlow<Tetromino?> = MutableStateFlow(null)
     val boardState: StateFlow<List<List<Color?>>> = MutableStateFlow(emptyList())
+    val lineClearAnimation: StateFlow<Set<Int>> = MutableStateFlow(emptySet())
 
     init {
         // Load preferences
@@ -91,6 +92,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             game?.boardState?.collect { (boardState as MutableStateFlow).value = it }
+        }
+
+        viewModelScope.launch {
+            game?.lineClearAnimation?.collect { (lineClearAnimation as MutableStateFlow).value = it }
         }
 
         game?.startGame()

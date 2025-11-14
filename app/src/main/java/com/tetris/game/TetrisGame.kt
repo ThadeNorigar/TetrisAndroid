@@ -30,8 +30,16 @@ class TetrisGame(
     private val _boardState = MutableStateFlow<List<List<Color?>>>(emptyList())
     val boardState: StateFlow<List<List<Color?>>> = _boardState.asStateFlow()
 
+    // Animation states
+    private val _hardDropAnimating = MutableStateFlow(false)
+    val hardDropAnimating: StateFlow<Boolean> = _hardDropAnimating.asStateFlow()
+
+    private val _lineClearAnimation = MutableStateFlow<Set<Int>>(emptySet())
+    val lineClearAnimation: StateFlow<Set<Int>> = _lineClearAnimation.asStateFlow()
+
     private var gameLoopJob: Job? = null
     private var lastDropTime = 0L
+    private var animationJob: Job? = null
 
     /**
      * Start a new game
@@ -130,22 +138,54 @@ class TetrisGame(
     }
 
     /**
-     * Hard drop - instantly drop piece to bottom
+     * Hard drop - drop piece to bottom with animation
      * Note: SNES Tetris didn't have hard drop, but we keep it without score bonus
      */
     fun hardDrop() {
         val piece = _currentPiece.value ?: return
         if (_gameState.value !is GameState.Playing) return
+        if (_hardDropAnimating.value) return // Don't allow multiple hard drops at once
 
         var dropDistance = 0
         while (!board.checkCollision(piece, offsetY = dropDistance + 1)) {
             dropDistance++
         }
 
-        _currentPiece.value = piece.copy(y = piece.y + dropDistance)
+        if (dropDistance == 0) {
+            // Already at bottom
+            lockPiece()
+            return
+        }
+
         // SNES Tetris: No hard drop bonus (keeping soft drop points only)
         _stats.value = _stats.value.copy(score = _stats.value.score + dropDistance)
-        lockPiece()
+
+        // Start animation
+        _hardDropAnimating.value = true
+        val startY = piece.y
+        val endY = piece.y + dropDistance
+
+        animationJob?.cancel()
+        animationJob = scope.launch {
+            val animationDuration = 150L // 150ms total animation
+            val steps = dropDistance
+            val delayPerStep = animationDuration / steps.coerceAtLeast(1)
+
+            for (i in 1..dropDistance) {
+                if (!isActive) break
+                _currentPiece.value = piece.copy(y = startY + i)
+                delay(delayPerStep)
+            }
+
+            // Ensure final position is set
+            _currentPiece.value = piece.copy(y = endY)
+            _hardDropAnimating.value = false
+
+            // Lock piece after animation
+            withContext(Dispatchers.Main) {
+                lockPiece()
+            }
+        }
     }
 
     /**
@@ -219,13 +259,53 @@ class TetrisGame(
         val piece = _currentPiece.value ?: return
 
         board.lockTetromino(piece)
-        val linesCleared = board.clearLines()
 
-        if (linesCleared > 0) {
-            updateStats(linesCleared)
+        // Check for completed lines
+        val completedLines = board.findCompletedLines()
+
+        if (completedLines.isNotEmpty()) {
+            // Start line clear animation
+            animateLineClear(completedLines)
+        } else {
+            // No lines to clear, just spawn next piece
+            spawnNextPiece()
         }
+    }
 
-        spawnNextPiece()
+    private fun animateLineClear(linesToClear: List<Int>) {
+        scope.launch {
+            // Blink animation - SNES style (3 blinks over ~450ms)
+            val blinkCount = 3
+            val blinkDuration = 150L // Each blink (on+off) takes 150ms
+
+            repeat(blinkCount) {
+                // Show lines (blink on)
+                _lineClearAnimation.value = linesToClear.toSet()
+                delay(blinkDuration / 2)
+
+                // Hide lines (blink off)
+                _lineClearAnimation.value = emptySet()
+                delay(blinkDuration / 2)
+            }
+
+            // Clear animation state
+            _lineClearAnimation.value = emptySet()
+
+            // Actually clear the lines
+            val linesCleared = board.clearLines()
+
+            if (linesCleared > 0) {
+                updateStats(linesCleared)
+            }
+
+            // Update board state
+            _boardState.value = board.getGridCopy()
+
+            // Spawn next piece
+            withContext(Dispatchers.Main) {
+                spawnNextPiece()
+            }
+        }
     }
 
     private fun updateStats(linesCleared: Int) {

@@ -37,6 +37,7 @@ fun GameScreen(
     board: List<List<Color?>>,
     currentPiece: Tetromino?,
     nextPiece: Tetromino?,
+    lineClearAnimation: Set<Int>,
     theme: TetrisTheme,
     highScore: Int,
     onMoveLeft: () -> Unit,
@@ -81,6 +82,7 @@ fun GameScreen(
                     board = board,
                     currentPiece = currentPiece,
                     nextPiece = nextPiece,
+                    lineClearAnimation = lineClearAnimation,
                     theme = theme,
                     highScore = highScore,
                     onMoveLeft = onMoveLeft,
@@ -122,6 +124,7 @@ private fun PlayingScreen(
     board: List<List<Color?>>,
     currentPiece: Tetromino?,
     nextPiece: Tetromino?,
+    lineClearAnimation: Set<Int>,
     theme: TetrisTheme,
     highScore: Int,
     onMoveLeft: () -> Unit,
@@ -149,6 +152,7 @@ private fun PlayingScreen(
             GameBoard(
                 board = board,
                 currentPiece = currentPiece,
+                lineClearAnimation = lineClearAnimation,
                 theme = theme,
                 modifier = Modifier.fillMaxSize(),
                 useGraphics = useGraphics
