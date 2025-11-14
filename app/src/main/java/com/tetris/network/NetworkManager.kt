@@ -184,7 +184,7 @@ class NetworkManager(private val context: Context) {
 
             val selectorManager = SelectorManager(Dispatchers.IO)
             val socket = aSocket(selectorManager).tcp().connect(
-                remoteAddress = InetSocketAddress(playerInfo.address, playerInfo.port)
+                remoteAddress = InetSocketAddress(playerInfo.address.hostAddress ?: playerInfo.address.hostName, playerInfo.port)
             )
 
             clientSocket = socket
@@ -337,7 +337,7 @@ class NetworkManager(private val context: Context) {
 
             val selectorManager = SelectorManager(Dispatchers.IO)
             val socket = aSocket(selectorManager).tcp().connect(
-                remoteAddress = InetSocketAddress(playerInfo.address, playerInfo.port)
+                remoteAddress = InetSocketAddress(playerInfo.address.hostAddress ?: playerInfo.address.hostName, playerInfo.port)
             )
 
             clientSocket = socket
