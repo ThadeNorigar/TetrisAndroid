@@ -1,6 +1,11 @@
 package com.tetris.ui
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -271,6 +277,54 @@ private fun ModeSelectionScreen(
     onJoinGame: () -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    var permissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.NEARBY_WIFI_DEVICES
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true // No runtime permission needed for older Android versions
+            }
+        )
+    }
+
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // Permission launcher for Android 13+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        permissionGranted = isGranted
+        if (isGranted) {
+            android.util.Log.d("LobbyScreen", "NEARBY_WIFI_DEVICES permission granted")
+            // Execute pending action
+            pendingAction?.invoke()
+            pendingAction = null
+        } else {
+            android.util.Log.e("LobbyScreen", "NEARBY_WIFI_DEVICES permission denied")
+            pendingAction = null
+        }
+    }
+
+    fun checkAndRequestPermission(action: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (permissionGranted) {
+                action()
+            } else {
+                // Save action to execute after permission granted
+                pendingAction = action
+                // Request permission
+                permissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }
+        } else {
+            // No permission needed for older versions
+            action()
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -286,7 +340,7 @@ private fun ModeSelectionScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = onHostGame,
+            onClick = { checkAndRequestPermission(onHostGame) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = theme.textHighlight,
@@ -299,7 +353,7 @@ private fun ModeSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = onJoinGame,
+            onClick = { checkAndRequestPermission(onJoinGame) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = theme.textHighlight,
