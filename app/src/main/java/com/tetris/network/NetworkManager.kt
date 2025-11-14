@@ -304,19 +304,21 @@ class NetworkManager(private val context: Context) {
             clientSocket = null
 
             // Wait for new connection with timeout
-            withTimeout(10000L) {
-                val socket = serverSocket?.accept()
-                if (socket != null) {
-                    clientSocket = socket
-                    reconnectAttempts = 0
-                    _connectionState.value = ConnectionState.Connected
-                    startKeepAlive()
-                    startReceivingMessages(socket)
-                    Log.d(tag, "Client reconnected successfully")
-                    return@withContext true
-                }
+            val socket = withTimeoutOrNull(10000L) {
+                serverSocket?.accept()
             }
-            false
+
+            if (socket != null) {
+                clientSocket = socket
+                reconnectAttempts = 0
+                _connectionState.value = ConnectionState.Connected
+                startKeepAlive()
+                startReceivingMessages(socket)
+                Log.d(tag, "Client reconnected successfully")
+                true
+            } else {
+                false
+            }
         } catch (e: Exception) {
             Log.e(tag, "Reconnect as host failed", e)
             false
@@ -327,10 +329,7 @@ class NetworkManager(private val context: Context) {
      * Attempt reconnection as client
      */
     private suspend fun attemptReconnectAsClient(): Boolean = withContext(Dispatchers.IO) {
-        val playerInfo = lastConnectedPlayer
-        if (playerInfo == null) {
-            return@withContext false
-        }
+        val playerInfo = lastConnectedPlayer ?: return@withContext false
 
         try {
             Log.d(tag, "Attempting to reconnect to ${playerInfo.name} (attempt $reconnectAttempts)...")
@@ -350,10 +349,10 @@ class NetworkManager(private val context: Context) {
             startKeepAlive()
             startReceivingMessages(socket)
             Log.d(tag, "Reconnected successfully to ${playerInfo.name}")
-            return@withContext true
+            true
         } catch (e: Exception) {
             Log.e(tag, "Reconnect as client failed", e)
-            return@withContext false
+            false
         }
     }
 
