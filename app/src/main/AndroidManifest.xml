@@ -17,7 +17,8 @@
         android:label="Retro Tetris"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Tetris">
+        android:theme="@style/Theme.Tetris"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
