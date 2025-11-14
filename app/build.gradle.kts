@@ -64,8 +64,8 @@ android {
 }
 
 dependencies {
-    // Compose BOM
-    val composeBom = platform("androidx.compose:compose-bom:2024.01.00")
+    // Compose BOM - Updated to fix CircularProgressIndicator animation incompatibility
+    val composeBom = platform("androidx.compose:compose-bom:2024.10.00")
     implementation(composeBom)
 
     // Core Android
