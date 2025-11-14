@@ -49,6 +49,7 @@ fun TetrisApp(viewModel: GameViewModel) {
             val board by viewModel.boardState.collectAsState()
             val currentPiece by viewModel.currentPiece.collectAsState()
             val nextPiece by viewModel.nextPiece.collectAsState()
+            val lineClearAnimation by viewModel.lineClearAnimation.collectAsState()
 
             GameScreen(
                 gameState = gameState,
@@ -56,6 +57,7 @@ fun TetrisApp(viewModel: GameViewModel) {
                 board = board,
                 currentPiece = currentPiece,
                 nextPiece = nextPiece,
+                lineClearAnimation = lineClearAnimation,
                 theme = currentTheme,
                 highScore = highScore,
                 onMoveLeft = { viewModel.moveLeft() },
