@@ -52,18 +52,28 @@ class LobbyViewModel(application: Application) : AndroidViewModel(application) {
     fun startHosting() {
         _isHost.value = true
         viewModelScope.launch {
-            networkManager.startHosting(_playerName.value)
+            val result = networkManager.startHosting(_playerName.value)
+            result.onFailure { error ->
+                android.util.Log.e("LobbyViewModel", "Failed to start hosting", error)
+            }
         }
     }
 
     fun startDiscovery() {
         _isHost.value = false
-        networkManager.startDiscovery()
+        try {
+            networkManager.startDiscovery()
+        } catch (e: Exception) {
+            android.util.Log.e("LobbyViewModel", "Failed to start discovery", e)
+        }
     }
 
     fun connectToPlayer(playerInfo: PlayerInfo) {
         viewModelScope.launch {
-            networkManager.connectToHost(playerInfo)
+            val result = networkManager.connectToHost(playerInfo)
+            result.onFailure { error ->
+                android.util.Log.e("LobbyViewModel", "Failed to connect to player", error)
+            }
         }
     }
 
