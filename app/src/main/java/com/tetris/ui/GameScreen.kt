@@ -404,13 +404,6 @@ private fun GameOverScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text(
-                text = "GAME OVER",
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = theme.textDanger
-            )
-
             if (isNewHighScore) {
                 Text(
                     text = "🏆 NEW HIGH SCORE! 🏆",
@@ -418,9 +411,9 @@ private fun GameOverScreen(
                     fontWeight = FontWeight.Bold,
                     color = theme.textHighlight
                 )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Stats
             Column(
