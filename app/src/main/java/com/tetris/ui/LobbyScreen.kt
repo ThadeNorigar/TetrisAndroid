@@ -96,6 +96,16 @@ class LobbyViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 /**
+ * UI state for the Lobby screen
+ */
+private sealed class LobbyUIState {
+    object NameInput : LobbyUIState()
+    object ModeSelection : LobbyUIState()
+    object Hosting : LobbyUIState()
+    object Joining : LobbyUIState()
+}
+
+/**
  * Lobby screen for multiplayer matchmaking
  */
 @Composable
@@ -119,14 +129,6 @@ fun LobbyScreen(
     val discoveredPlayers by viewModel.discoveredPlayers.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
     val isHost by viewModel.isHost.collectAsState()
-
-    // UI state management
-    sealed class LobbyUIState {
-        object NameInput : LobbyUIState()
-        object ModeSelection : LobbyUIState()
-        object Hosting : LobbyUIState()
-        object Joining : LobbyUIState()
-    }
 
     var uiState by remember { mutableStateOf<LobbyUIState>(LobbyUIState.NameInput) }
 
