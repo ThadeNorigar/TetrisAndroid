@@ -29,6 +29,7 @@ import com.tetris.ui.theme.TetrisTheme
 fun GameBoard(
     board: List<List<Color?>>,
     currentPiece: Tetromino?,
+    lineClearAnimation: Set<Int> = emptySet(),
     theme: TetrisTheme,
     modifier: Modifier = Modifier,
     useGraphics: Boolean = true
@@ -121,6 +122,11 @@ fun GameBoard(
 
             // Draw locked blocks (with offset for frame border)
             board.forEachIndexed { y, row ->
+                // Skip lines that are being cleared (when they should be invisible)
+                if (lineClearAnimation.contains(y)) {
+                    return@forEachIndexed
+                }
+
                 row.forEachIndexed { x, color ->
                     if (color != null) {
                         // Try to find the matching tetromino type by color

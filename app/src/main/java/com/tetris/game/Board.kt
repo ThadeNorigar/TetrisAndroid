@@ -68,6 +68,19 @@ class Board(
     }
 
     /**
+     * Find completed lines without clearing them
+     */
+    fun findCompletedLines(): List<Int> {
+        val linesToClear = mutableListOf<Int>()
+        for (y in 0 until height) {
+            if (grid[y].all { it != null }) {
+                linesToClear.add(y)
+            }
+        }
+        return linesToClear
+    }
+
+    /**
      * Clear completed lines and return the number of lines cleared
      */
     fun clearLines(): Int {
