@@ -3,11 +3,15 @@ package com.tetris.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -193,6 +197,8 @@ private fun MenuButton(
     useGraphics: Boolean = true
 ) {
     val context = LocalContext.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
     // Load button graphic based on text
     val buttonType = when (text) {
@@ -201,7 +207,7 @@ private fun MenuButton(
         else -> null
     }
 
-    val buttonResourceId = if (useGraphics && buttonType != null) {
+    val buttonNormalRes = if (useGraphics && buttonType != null) {
         try {
             context.resources.getIdentifier(buttonType, "drawable", context.packageName)
         } catch (e: Exception) {
@@ -211,17 +217,34 @@ private fun MenuButton(
         0
     }
 
-    if (useGraphics && buttonResourceId != 0) {
-        // Use custom graphics
+    val buttonPressedRes = if (useGraphics && buttonType != null) {
+        try {
+            context.resources.getIdentifier("${buttonType}_pressed", "drawable", context.packageName)
+        } catch (e: Exception) {
+            0
+        }
+    } else {
+        0
+    }
+
+    val hasGraphics = buttonNormalRes != 0
+
+    if (hasGraphics) {
+        // Use custom graphics with pressed state
         Box(
             modifier = modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clickable(onClick = onClick),
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick
+                ),
             contentAlignment = Alignment.Center
         ) {
+            val imageRes = if (isPressed && buttonPressedRes != 0) buttonPressedRes else buttonNormalRes
             Image(
-                painter = painterResource(id = buttonResourceId),
+                painter = painterResource(id = imageRes),
                 contentDescription = text,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
@@ -237,7 +260,8 @@ private fun MenuButton(
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (highlighted) theme.textHighlight else theme.gridBorder,
                 contentColor = if (highlighted) theme.background else theme.textPrimary
-            )
+            ),
+            interactionSource = interactionSource
         ) {
             Text(
                 text = text,

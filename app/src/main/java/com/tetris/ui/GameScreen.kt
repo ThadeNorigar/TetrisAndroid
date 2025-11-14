@@ -3,6 +3,8 @@ package com.tetris.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -254,16 +256,32 @@ private fun PausedOverlay(
     useGraphics: Boolean = true
 ) {
     val context = LocalContext.current
+    val resumeInteractionSource = remember { MutableInteractionSource() }
+    val menuInteractionSource = remember { MutableInteractionSource() }
+    val isResumePressed by resumeInteractionSource.collectIsPressedAsState()
+    val isMenuPressed by menuInteractionSource.collectIsPressedAsState()
 
     // Load button graphics
-    val buttonResumeResourceId = try {
+    val buttonResumeNormalRes = try {
         context.resources.getIdentifier("button_resume", "drawable", context.packageName)
     } catch (e: Exception) {
         0
     }
 
-    val buttonMenuResourceId = try {
+    val buttonResumePressedRes = try {
+        context.resources.getIdentifier("button_resume_pressed", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    val buttonMenuNormalRes = try {
         context.resources.getIdentifier("button_menu", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    val buttonMenuPressedRes = try {
+        context.resources.getIdentifier("button_menu_pressed", "drawable", context.packageName)
     } catch (e: Exception) {
         0
     }
@@ -286,16 +304,21 @@ private fun PausedOverlay(
             )
 
             // Resume button
-            if (useGraphics && buttonResumeResourceId != 0) {
+            if (useGraphics && buttonResumeNormalRes != 0) {
                 Box(
                     modifier = Modifier
                         .width(200.dp)
                         .height(56.dp)
-                        .clickable(onClick = onResume),
+                        .clickable(
+                            interactionSource = resumeInteractionSource,
+                            indication = null,
+                            onClick = onResume
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
+                    val imageRes = if (isResumePressed && buttonResumePressedRes != 0) buttonResumePressedRes else buttonResumeNormalRes
                     Image(
-                        painter = painterResource(id = buttonResumeResourceId),
+                        painter = painterResource(id = imageRes),
                         contentDescription = "Resume",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
@@ -310,7 +333,8 @@ private fun PausedOverlay(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = theme.textHighlight,
                         contentColor = theme.background
-                    )
+                    ),
+                    interactionSource = resumeInteractionSource
                 ) {
                     Text(
                         text = "RESUME",
@@ -321,16 +345,21 @@ private fun PausedOverlay(
             }
 
             // Menu button
-            if (useGraphics && buttonMenuResourceId != 0) {
+            if (useGraphics && buttonMenuNormalRes != 0) {
                 Box(
                     modifier = Modifier
                         .width(200.dp)
                         .height(56.dp)
-                        .clickable(onClick = onBackToMenu),
+                        .clickable(
+                            interactionSource = menuInteractionSource,
+                            indication = null,
+                            onClick = onBackToMenu
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
+                    val imageRes = if (isMenuPressed && buttonMenuPressedRes != 0) buttonMenuPressedRes else buttonMenuNormalRes
                     Image(
-                        painter = painterResource(id = buttonMenuResourceId),
+                        painter = painterResource(id = imageRes),
                         contentDescription = "Menu",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
@@ -345,7 +374,8 @@ private fun PausedOverlay(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = theme.gridBorder,
                         contentColor = theme.textPrimary
-                    )
+                    ),
+                    interactionSource = menuInteractionSource
                 ) {
                     Text(
                         text = "MENU",
@@ -369,6 +399,8 @@ private fun GameOverScreen(
 ) {
     val context = LocalContext.current
     val isNewHighScore = score > highScore
+    val backInteractionSource = remember { MutableInteractionSource() }
+    val isBackPressed by backInteractionSource.collectIsPressedAsState()
 
     // Load game over background image if available
     val gameOverBackgroundResourceId = try {
@@ -378,8 +410,14 @@ private fun GameOverScreen(
     }
 
     // Load back to menu button graphics
-    val buttonBackResourceId = try {
+    val buttonBackNormalRes = try {
         context.resources.getIdentifier("button_back_to_menu", "drawable", context.packageName)
+    } catch (e: Exception) {
+        0
+    }
+
+    val buttonBackPressedRes = try {
+        context.resources.getIdentifier("button_back_to_menu_pressed", "drawable", context.packageName)
     } catch (e: Exception) {
         0
     }
@@ -428,16 +466,21 @@ private fun GameOverScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Back to Menu button with optional graphics
-            if (useGraphics && buttonBackResourceId != 0) {
+            if (useGraphics && buttonBackNormalRes != 0) {
                 Box(
                     modifier = Modifier
                         .width(200.dp)
                         .height(56.dp)
-                        .clickable(onClick = onBackToMenu),
+                        .clickable(
+                            interactionSource = backInteractionSource,
+                            indication = null,
+                            onClick = onBackToMenu
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
+                    val imageRes = if (isBackPressed && buttonBackPressedRes != 0) buttonBackPressedRes else buttonBackNormalRes
                     Image(
-                        painter = painterResource(id = buttonBackResourceId),
+                        painter = painterResource(id = imageRes),
                         contentDescription = "Back to Menu",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
@@ -452,7 +495,8 @@ private fun GameOverScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = theme.textHighlight,
                         contentColor = theme.background
-                    )
+                    ),
+                    interactionSource = backInteractionSource
                 ) {
                     Text(
                         text = "MENU",
