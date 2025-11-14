@@ -159,6 +159,20 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _screenState.value = ScreenState.Menu
     }
 
+    /**
+     * Navigate to lobby for multiplayer
+     */
+    fun navigateToLobby() {
+        _screenState.value = ScreenState.Lobby
+    }
+
+    /**
+     * Navigate to multiplayer game
+     */
+    fun navigateToMultiplayerGame() {
+        _screenState.value = ScreenState.MultiplayerGame
+    }
+
     override fun onCleared() {
         super.onCleared()
         game?.dispose()
@@ -171,4 +185,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 sealed class ScreenState {
     object Menu : ScreenState()
     object Game : ScreenState()
+    object Lobby : ScreenState()
+    object MultiplayerGame : ScreenState()
 }

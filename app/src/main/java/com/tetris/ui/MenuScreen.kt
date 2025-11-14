@@ -30,6 +30,7 @@ fun MenuScreen(
     theme: TetrisTheme,
     highScore: Int,
     onStartGame: () -> Unit,
+    onVsPlayer: () -> Unit = {},
     modifier: Modifier = Modifier,
     useGraphics: Boolean = true
 ) {
@@ -70,6 +71,15 @@ fun MenuScreen(
             onClick = onStartGame,
             theme = theme,
             highlighted = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        MenuButton(
+            text = "VS PLAYER",
+            onClick = onVsPlayer,
+            theme = theme,
+            highlighted = false
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -203,6 +213,7 @@ private fun MenuButton(
     // Load button graphic based on text
     val buttonType = when (text) {
         "START GAME" -> "button_start_game"
+        "VS PLAYER" -> "button_vs_player"
         "BACK" -> "button_back"
         else -> null
     }

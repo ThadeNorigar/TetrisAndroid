@@ -10,6 +10,9 @@ import androidx.compose.ui.Modifier
 import com.tetris.game.GameState
 import com.tetris.ui.GameScreen
 import com.tetris.ui.MenuScreen
+import com.tetris.ui.LobbyScreen
+import com.tetris.ui.LobbyViewModel
+import com.tetris.ui.MultiplayerGameScreen
 
 /**
  * Main activity for the Tetris game
@@ -39,8 +42,38 @@ fun TetrisApp(viewModel: GameViewModel) {
                 theme = currentTheme,
                 highScore = highScore,
                 onStartGame = { viewModel.startGame() },
+                onVsPlayer = { viewModel.navigateToLobby() },
                 modifier = Modifier.fillMaxSize()
             )
+        }
+
+        is ScreenState.Lobby -> {
+            LobbyScreen(
+                theme = currentTheme,
+                onBack = { viewModel.returnToMenu() },
+                onGameStart = { viewModel.navigateToMultiplayerGame() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        is ScreenState.MultiplayerGame -> {
+            // Get NetworkManager from LobbyViewModel
+            val networkManager = LobbyViewModel.sharedNetworkManager
+            if (networkManager != null) {
+                MultiplayerGameScreen(
+                    theme = currentTheme,
+                    networkManager = networkManager,
+                    onBackToMenu = {
+                        // Clean up
+                        LobbyViewModel.sharedNetworkManager = null
+                        viewModel.returnToMenu()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Fallback if no network manager (shouldn't happen)
+                viewModel.returnToMenu()
+            }
         }
 
         is ScreenState.Game -> {
