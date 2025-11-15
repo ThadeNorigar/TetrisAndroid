@@ -1,6 +1,7 @@
 package com.tetris.network
 
 import android.content.Context
+import android.net.wifi.WifiManager
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.util.Log
@@ -21,7 +22,7 @@ import java.net.InetAddress
 class NetworkManager(private val context: Context) {
     private val tag = "NetworkManager"
     private val serviceName = "TetrisGame"
-    private val serviceType = "_tetris._tcp"
+    private val serviceType = "_tetris._tcp."
     private val port = 8888
 
     private val nsdManager: NsdManager by lazy {
@@ -39,6 +40,11 @@ class NetworkManager(private val context: Context) {
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
     private var receiveJob: Job? = null
+    private var multicastLock: WifiManager.MulticastLock? = null
+
+    // Service resolution queue to handle one resolve at a time
+    private val resolveQueue = mutableListOf<NsdServiceInfo>()
+    private var isResolving = false
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -66,6 +72,9 @@ class NetworkManager(private val context: Context) {
      */
     suspend fun startHosting(playerName: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            // Acquire multicast lock for NSD to work properly
+            acquireMulticastLock()
+
             // Initialize SelectorManager if not already created
             if (selectorManager == null) {
                 selectorManager = SelectorManager(Dispatchers.IO)
@@ -116,6 +125,9 @@ class NetworkManager(private val context: Context) {
         Log.d(tag, "=== startDiscovery() called ===")
         Log.d(tag, "Service type to discover: $serviceType")
 
+        // Acquire multicast lock for NSD to work properly
+        acquireMulticastLock()
+
         try {
             val discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
@@ -135,27 +147,13 @@ class NetworkManager(private val context: Context) {
             }
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-                Log.d(tag, "Service found: ${serviceInfo.serviceName}")
-                if (serviceInfo.serviceType == serviceType) {
-                    nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
-                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                            Log.e(tag, "Resolve failed: $errorCode")
-                        }
-
-                        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-                            Log.d(tag, "Service resolved: ${serviceInfo.serviceName}")
-                            val playerInfo = PlayerInfo(
-                                name = serviceInfo.serviceName,
-                                address = serviceInfo.host,
-                                port = serviceInfo.port
-                            )
-                            val currentList = _discoveredPlayers.value.toMutableList()
-                            if (currentList.none { it.name == playerInfo.name }) {
-                                currentList.add(playerInfo)
-                                _discoveredPlayers.value = currentList
-                            }
-                        }
-                    })
+                Log.d(tag, "Service found: ${serviceInfo.serviceName}, type: ${serviceInfo.serviceType}")
+                // Use startsWith because Android may append domain info like ".local."
+                if (serviceInfo.serviceType.startsWith("_tetris._tcp")) {
+                    Log.d(tag, "Service type matches, attempting to resolve...")
+                    resolveService(serviceInfo)
+                } else {
+                    Log.d(tag, "Service type doesn't match, ignoring")
                 }
             }
 
@@ -188,6 +186,12 @@ class NetworkManager(private val context: Context) {
         }
         discoveryListener = null
         _discoveredPlayers.value = emptyList()
+
+        // Clear resolve queue
+        synchronized(resolveQueue) {
+            resolveQueue.clear()
+            isResolving = false
+        }
     }
 
     /**
@@ -466,6 +470,98 @@ class NetworkManager(private val context: Context) {
     }
 
     /**
+     * Resolve service with queue to handle one at a time
+     */
+    private fun resolveService(serviceInfo: NsdServiceInfo) {
+        synchronized(resolveQueue) {
+            resolveQueue.add(serviceInfo)
+            if (!isResolving) {
+                processNextResolve()
+            }
+        }
+    }
+
+    /**
+     * Process next service in resolve queue
+     */
+    private fun processNextResolve() {
+        synchronized(resolveQueue) {
+            if (resolveQueue.isEmpty()) {
+                isResolving = false
+                return
+            }
+
+            isResolving = true
+            val serviceInfo = resolveQueue.removeAt(0)
+
+            try {
+                nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
+                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                        Log.e(tag, "Resolve failed for ${serviceInfo.serviceName}: errorCode=$errorCode")
+                        // Process next in queue
+                        processNextResolve()
+                    }
+
+                    override fun onServiceResolved(resolvedService: NsdServiceInfo) {
+                        Log.d(tag, "Service resolved: ${resolvedService.serviceName} at ${resolvedService.host}:${resolvedService.port}")
+                        val playerInfo = PlayerInfo(
+                            name = resolvedService.serviceName,
+                            address = resolvedService.host,
+                            port = resolvedService.port
+                        )
+                        val currentList = _discoveredPlayers.value.toMutableList()
+                        if (currentList.none { it.name == playerInfo.name }) {
+                            currentList.add(playerInfo)
+                            _discoveredPlayers.value = currentList
+                            Log.d(tag, "Added player to list: ${playerInfo.name}")
+                        }
+                        // Process next in queue
+                        processNextResolve()
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(tag, "Exception during resolve", e)
+                processNextResolve()
+            }
+        }
+    }
+
+    /**
+     * Acquire WiFi multicast lock for NSD to work
+     */
+    private fun acquireMulticastLock() {
+        if (multicastLock == null || !multicastLock!!.isHeld) {
+            try {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                multicastLock = wifiManager.createMulticastLock("TetrisMulticastLock").apply {
+                    setReferenceCounted(true)
+                    acquire()
+                }
+                Log.d(tag, "✓ Multicast lock acquired")
+            } catch (e: Exception) {
+                Log.e(tag, "✗ Failed to acquire multicast lock", e)
+            }
+        }
+    }
+
+    /**
+     * Release WiFi multicast lock
+     */
+    private fun releaseMulticastLock() {
+        multicastLock?.let {
+            if (it.isHeld) {
+                try {
+                    it.release()
+                    Log.d(tag, "✓ Multicast lock released")
+                } catch (e: Exception) {
+                    Log.e(tag, "Error releasing multicast lock", e)
+                }
+            }
+        }
+        multicastLock = null
+    }
+
+    /**
      * Disconnect and cleanup
      */
     fun disconnect() {
@@ -488,6 +584,7 @@ class NetworkManager(private val context: Context) {
 
             stopDiscovery()
             unregisterService()
+            releaseMulticastLock()
 
             _connectionState.value = ConnectionState.Disconnected
         }
