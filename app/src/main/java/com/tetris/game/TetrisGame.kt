@@ -256,20 +256,28 @@ class TetrisGame(
         val color = colorScheme[type] ?: Color.White
         val tetromino = Tetromino.create(type, color)
 
-        // Center horizontally
+        // Center horizontally and spawn at top of visible board
         val startX = (board.width - tetromino.shape[0].size) / 2
-        // Spawn at y = -1 to allow pieces to enter from above the visible board
-        // This prevents false game over when the top row has blocks
-        return tetromino.copy(x = startX, y = -1)
+        return tetromino.copy(x = startX, y = 0)
     }
 
     private fun spawnNextPiece() {
         _currentPiece.value = _nextPiece.value
         _nextPiece.value = spawnPiece()
+    }
 
-        // Check if game over (collision at spawn position)
-        val piece = _currentPiece.value
-        if (piece != null && board.checkCollision(piece)) {
+    private fun spawnSavedPiece(piece: Tetromino?) {
+        _currentPiece.value = piece
+    }
+
+    private fun checkGameOver(piece: Tetromino): Boolean {
+        // Game over if piece has blocks above visible area (y < 0) when locked
+        val hasBlocksAboveBoard = piece.shape.indices.any { row ->
+            val y = piece.y + row
+            y < 0 && piece.shape[row].any { it != 0 }
+        }
+
+        if (hasBlocksAboveBoard) {
             val stats = _stats.value
             _gameState.value = GameState.GameOver(
                 score = stats.score,
@@ -277,30 +285,43 @@ class TetrisGame(
                 lines = stats.linesCleared
             )
             gameLoopJob?.cancel()
+            return true
         }
+        return false
     }
 
     private fun lockPiece() {
         val piece = _currentPiece.value ?: return
 
+        // Check for game over: piece being locked has blocks above visible area (y < 0)
+        if (checkGameOver(piece)) {
+            return
+        }
+
         board.lockTetromino(piece)
+
+        // Save the current next piece (this will become the new current piece)
+        val pieceToSpawn = _nextPiece.value
 
         // Clear current piece to prevent double rendering during animation
         _currentPiece.value = null
+
+        // Generate new next piece immediately so UI shows correct preview
+        _nextPiece.value = spawnPiece()
 
         // Check for completed lines
         val completedLines = board.findCompletedLines()
 
         if (completedLines.isNotEmpty()) {
             // Start line clear animation
-            animateLineClear(completedLines)
+            animateLineClear(completedLines, pieceToSpawn)
         } else {
-            // No lines to clear, just spawn next piece
-            spawnNextPiece()
+            // No lines to clear, just spawn the saved next piece
+            spawnSavedPiece(pieceToSpawn)
         }
     }
 
-    private fun animateLineClear(linesToClear: List<Int>) {
+    private fun animateLineClear(linesToClear: List<Int>, pieceToSpawn: Tetromino?) {
         scope.launch {
             // Blink animation - SNES style (3 blinks over ~450ms)
             val blinkCount = 3
@@ -329,9 +350,9 @@ class TetrisGame(
             // Update board state
             _boardState.value = board.getGridCopy()
 
-            // Spawn next piece
+            // Spawn the saved next piece
             withContext(Dispatchers.Main) {
-                spawnNextPiece()
+                spawnSavedPiece(pieceToSpawn)
             }
         }
     }
