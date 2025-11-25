@@ -262,12 +262,58 @@ class TetrisGame(
     }
 
     private fun spawnNextPiece() {
-        _currentPiece.value = _nextPiece.value
+        val piece = _nextPiece.value ?: return
         _nextPiece.value = spawnPiece()
+
+        // Try to spawn at y=0, if collision move up (y=-1, -2, etc.)
+        var spawnY = 0
+        val maxAttempts = 5 // Try up to y=-4
+
+        while (spawnY >= -maxAttempts) {
+            val positionedPiece = piece.copy(y = spawnY)
+            if (!board.checkCollision(positionedPiece)) {
+                // Found valid spawn position
+                _currentPiece.value = positionedPiece
+                return
+            }
+            spawnY--
+        }
+
+        // Could not spawn even at y=-5, game over
+        val stats = _stats.value
+        _gameState.value = GameState.GameOver(
+            score = stats.score,
+            level = stats.level,
+            lines = stats.linesCleared
+        )
+        gameLoopJob?.cancel()
     }
 
     private fun spawnSavedPiece(piece: Tetromino?) {
-        _currentPiece.value = piece
+        if (piece == null) return
+
+        // Try to spawn at y=0, if collision move up (y=-1, -2, etc.)
+        var spawnY = 0
+        val maxAttempts = 5 // Try up to y=-4
+
+        while (spawnY >= -maxAttempts) {
+            val positionedPiece = piece.copy(y = spawnY)
+            if (!board.checkCollision(positionedPiece)) {
+                // Found valid spawn position
+                _currentPiece.value = positionedPiece
+                return
+            }
+            spawnY--
+        }
+
+        // Could not spawn even at y=-5, game over
+        val stats = _stats.value
+        _gameState.value = GameState.GameOver(
+            score = stats.score,
+            level = stats.level,
+            lines = stats.linesCleared
+        )
+        gameLoopJob?.cancel()
     }
 
     private fun checkGameOver(piece: Tetromino): Boolean {
