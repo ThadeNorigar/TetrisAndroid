@@ -511,16 +511,14 @@ class NetworkManager(private val context: Context) {
             }
 
             override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
-                Log.d(tag, "")
-                Log.d(tag, "╔════════════════════════════════════════╗")
-                Log.d(tag, "║  ✓ NSD SERVICE REGISTERED             ║")
-                Log.d(tag, "╠════════════════════════════════════════╣")
-                Log.d(tag, "║  Name: ${serviceInfo.serviceName.padEnd(29)}║")
-                Log.d(tag, "║  Type: ${serviceInfo.serviceType.padEnd(29)}║")
-                Log.d(tag, "║  Port: ${port.toString().padEnd(29)}║")
-                Log.d(tag, "╚════════════════════════════════════════╝")
-                Log.d(tag, "")
-                Log.d(tag, "Host is now discoverable on the local network!")
+                // IMPORTANT: Android NSD may return null values in the callback parameter.
+                // We use the original values from our class instead of the callback parameter.
+                Log.d(tag, "✓ Service REGISTERED successfully")
+                Log.d(tag, "  Registered name: ${serviceInfo.serviceName}")
+                Log.d(tag, "  Expected type: ${this@NetworkManager.serviceType}")
+                Log.d(tag, "  Expected port: ${this@NetworkManager.port}")
+                // Note: serviceInfo.serviceType and serviceInfo.port may be null here
+                // This is normal Android NSD behavior - the system may modify these values
             }
 
             override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
