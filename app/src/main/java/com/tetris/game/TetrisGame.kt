@@ -283,6 +283,9 @@ class TetrisGame(
 
         board.lockTetromino(piece)
 
+        // Clear current piece to prevent double rendering during animation
+        _currentPiece.value = null
+
         // Check for completed lines
         val completedLines = board.findCompletedLines()
 
