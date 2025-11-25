@@ -49,10 +49,14 @@ class TetrisGame(
         board.reset()
         _stats.value = GameStats()
         _currentPiece.value = null
+
+        // Generate first two pieces
+        val firstPiece = spawnPiece()
         _nextPiece.value = spawnPiece()
         _gameState.value = GameState.Playing
 
-        spawnNextPiece()
+        // Spawn first piece
+        spawnInitialPiece(firstPiece)
         startGameLoop()
     }
 
@@ -261,25 +265,21 @@ class TetrisGame(
         return tetromino.copy(x = startX, y = 0)
     }
 
-    private fun spawnNextPiece() {
-        val piece = _nextPiece.value ?: return
-        _nextPiece.value = spawnPiece()
-
-        // Try to spawn at y=0, if collision move up (y=-1, -2, etc.)
+    private fun spawnInitialPiece(piece: Tetromino) {
+        // Initial spawn for game start - try y=0, move up if needed
         var spawnY = 0
-        val maxAttempts = 5 // Try up to y=-4
+        val maxAttempts = 5
 
         while (spawnY >= -maxAttempts) {
             val positionedPiece = piece.copy(y = spawnY)
             if (!board.checkCollision(positionedPiece)) {
-                // Found valid spawn position
                 _currentPiece.value = positionedPiece
                 return
             }
             spawnY--
         }
 
-        // Could not spawn even at y=-5, game over
+        // Could not spawn, immediate game over
         val stats = _stats.value
         _gameState.value = GameState.GameOver(
             score = stats.score,
@@ -294,7 +294,7 @@ class TetrisGame(
 
         // Try to spawn at y=0, if collision move up (y=-1, -2, etc.)
         var spawnY = 0
-        val maxAttempts = 5 // Try up to y=-4
+        val maxAttempts = 5
 
         while (spawnY >= -maxAttempts) {
             val positionedPiece = piece.copy(y = spawnY)
