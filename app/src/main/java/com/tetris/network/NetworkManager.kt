@@ -72,55 +72,112 @@ class NetworkManager(private val context: Context) {
      * Start hosting a game
      */
     suspend fun startHosting(playerName: String): Result<Unit> = withContext(Dispatchers.IO) {
+        Log.d(tag, "=== startHosting() CALLED ===")
+        Log.d(tag, "Player name: $playerName")
+        Log.d(tag, "Thread: ${Thread.currentThread().name}")
+
         try {
-            Log.d(tag, "=== Starting Host Mode ===")
-
-            // Check WiFi connectivity
-            checkWiFiConnectivity()
-
-            // Acquire multicast lock for NSD to work properly
-            acquireMulticastLock()
-
-            // Initialize SelectorManager if not already created
-            if (selectorManager == null) {
-                selectorManager = SelectorManager(Dispatchers.IO)
+            // Step 1: Acquire multicast lock for NSD to work properly
+            Log.d(tag, "STEP 1: Acquiring multicast lock...")
+            try {
+                acquireMulticastLock()
+                Log.d(tag, "✓ STEP 1 completed: Multicast lock acquired")
+            } catch (e: Exception) {
+                Log.e(tag, "✗ STEP 1 FAILED: Error acquiring multicast lock", e)
+                throw e
             }
 
-            // Start server socket
-            serverSocket = aSocket(selectorManager!!).tcp().bind(port = port)
+            // Step 2: Initialize SelectorManager if not already created
+            Log.d(tag, "STEP 2: Initializing SelectorManager...")
+            try {
+                if (selectorManager == null) {
+                    selectorManager = SelectorManager(Dispatchers.IO)
+                    Log.d(tag, "✓ STEP 2 completed: SelectorManager created")
+                } else {
+                    Log.d(tag, "✓ STEP 2 skipped: SelectorManager already exists")
+                }
+            } catch (e: Exception) {
+                Log.e(tag, "✗ STEP 2 FAILED: Error creating SelectorManager", e)
+                throw e
+            }
 
-            Log.d(tag, "✓ Server socket bound to port $port")
-            Log.d(tag, "✓ Local address: ${serverSocket?.localAddress}")
+            // Step 3: Start server socket
+            Log.d(tag, "STEP 3: Binding server socket to port $port...")
+            try {
+                serverSocket = aSocket(selectorManager!!).tcp().bind(port = port)
+                Log.d(tag, "✓ STEP 3 completed: Server socket bound to port $port")
+                Log.d(tag, "Server socket details: ${serverSocket?.localAddress}")
+            } catch (e: Exception) {
+                Log.e(tag, "✗ STEP 3 FAILED: Error binding server socket", e)
+                Log.e(tag, "Exception type: ${e.javaClass.simpleName}")
+                Log.e(tag, "Exception message: ${e.message}")
+                throw e
+            }
 
-            // Register NSD service
-            registerService(playerName)
+            // Step 4: Register NSD service
+            Log.d(tag, "STEP 4: Registering NSD service...")
+            try {
+                registerService(playerName)
+                Log.d(tag, "✓ STEP 4 completed: NSD service registration initiated")
+            } catch (e: Exception) {
+                Log.e(tag, "✗ STEP 4 FAILED: Error registering NSD service", e)
+                throw e
+            }
 
+            // Step 5: Update state
+            Log.d(tag, "STEP 5: Updating connection state...")
             isHost = true
             hostPlayerName = playerName
             _connectionState.value = ConnectionState.Hosting(playerName)
+            Log.d(tag, "✓ STEP 5 completed: State updated to Hosting")
 
-            // Wait for client connection
+            // Step 6: Wait for client connection
+            Log.d(tag, "STEP 6: Launching coroutine to accept client connections...")
             scope.launch {
                 try {
+                    Log.d(tag, "Waiting for client to connect...")
                     val socket = serverSocket?.accept()
                     if (socket != null) {
+                        Log.d(tag, "✓ Client connected from: ${socket.remoteAddress}")
                         clientSocket = socket
                         reconnectAttempts = 0
                         _connectionState.value = ConnectionState.Connected
                         startKeepAlive()
                         startReceivingMessages(socket)
-                        Log.d(tag, "Client connected")
+                        Log.d(tag, "✓ Client connection fully established")
+                    } else {
+                        Log.e(tag, "✗ serverSocket.accept() returned null")
                     }
                 } catch (e: Exception) {
-                    Log.e(tag, "Error accepting connection", e)
+                    Log.e(tag, "✗ Error accepting connection", e)
+                    Log.e(tag, "Exception type: ${e.javaClass.simpleName}")
+                    Log.e(tag, "Exception message: ${e.message}")
+                    Log.e(tag, "Stack trace: ${e.stackTraceToString()}")
                     _connectionState.value = ConnectionState.Error(e.message ?: "Connection failed")
                 }
             }
+            Log.d(tag, "✓ STEP 6 completed: Accept coroutine launched")
 
+            Log.d(tag, "=== startHosting() COMPLETED SUCCESSFULLY ===")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(tag, "=== startHosting() FAILED ===")
             Log.e(tag, "Error starting host", e)
+            Log.e(tag, "Exception type: ${e.javaClass.simpleName}")
+            Log.e(tag, "Exception message: ${e.message}")
+            Log.e(tag, "Stack trace: ${e.stackTraceToString()}")
             _connectionState.value = ConnectionState.Error(e.message ?: "Failed to start hosting")
+
+            // Cleanup on failure
+            try {
+                serverSocket?.close()
+                serverSocket = null
+                unregisterService()
+                releaseMulticastLock()
+            } catch (cleanupException: Exception) {
+                Log.e(tag, "Error during cleanup after failure", cleanupException)
+            }
+
             return@withContext Result.failure(e)
         }
     }
@@ -629,20 +686,32 @@ class NetworkManager(private val context: Context) {
      * Acquire WiFi multicast lock for NSD to work
      */
     private fun acquireMulticastLock() {
+        Log.d(tag, "acquireMulticastLock() called")
+        Log.d(tag, "Current multicastLock: ${if (multicastLock == null) "null" else "exists"}")
+        Log.d(tag, "Is held: ${multicastLock?.isHeld ?: false}")
+
         if (multicastLock == null || !multicastLock!!.isHeld) {
             try {
+                Log.d(tag, "Getting WifiManager service...")
                 val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                Log.d(tag, "✓ WifiManager obtained")
+                Log.d(tag, "WiFi enabled: ${wifiManager.isWifiEnabled}")
+
+                Log.d(tag, "Creating multicast lock...")
                 multicastLock = wifiManager.createMulticastLock("TetrisMulticastLock").apply {
                     setReferenceCounted(true)
+                    Log.d(tag, "Acquiring multicast lock...")
                     acquire()
                 }
                 Log.d(tag, "✓ Multicast lock acquired successfully")
-                Log.d(tag, "  - Lock is held: ${multicastLock?.isHeld}")
             } catch (e: Exception) {
                 Log.e(tag, "✗ Failed to acquire multicast lock", e)
+                Log.e(tag, "Exception type: ${e.javaClass.simpleName}")
+                Log.e(tag, "Exception message: ${e.message}")
+                throw e
             }
         } else {
-            Log.d(tag, "ℹ Multicast lock already held")
+            Log.d(tag, "✓ Multicast lock already held, skipping")
         }
     }
 
