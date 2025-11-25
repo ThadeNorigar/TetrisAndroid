@@ -280,27 +280,48 @@ class TetrisGame(
         }
     }
 
+    private fun spawnSavedPiece(piece: Tetromino?) {
+        _currentPiece.value = piece
+
+        // Check if game over (collision at spawn position)
+        if (piece != null && board.checkCollision(piece)) {
+            val stats = _stats.value
+            _gameState.value = GameState.GameOver(
+                score = stats.score,
+                level = stats.level,
+                lines = stats.linesCleared
+            )
+            gameLoopJob?.cancel()
+        }
+    }
+
     private fun lockPiece() {
         val piece = _currentPiece.value ?: return
 
         board.lockTetromino(piece)
 
+        // Save the current next piece (this will become the new current piece)
+        val pieceToSpawn = _nextPiece.value
+
         // Clear current piece to prevent double rendering during animation
         _currentPiece.value = null
+
+        // Generate new next piece immediately so UI shows correct preview
+        _nextPiece.value = spawnPiece()
 
         // Check for completed lines
         val completedLines = board.findCompletedLines()
 
         if (completedLines.isNotEmpty()) {
             // Start line clear animation
-            animateLineClear(completedLines)
+            animateLineClear(completedLines, pieceToSpawn)
         } else {
-            // No lines to clear, just spawn next piece
-            spawnNextPiece()
+            // No lines to clear, just spawn the saved next piece
+            spawnSavedPiece(pieceToSpawn)
         }
     }
 
-    private fun animateLineClear(linesToClear: List<Int>) {
+    private fun animateLineClear(linesToClear: List<Int>, pieceToSpawn: Tetromino?) {
         scope.launch {
             // Blink animation - SNES style (3 blinks over ~450ms)
             val blinkCount = 3
@@ -329,9 +350,9 @@ class TetrisGame(
             // Update board state
             _boardState.value = board.getGridCopy()
 
-            // Spawn next piece
+            // Spawn the saved next piece
             withContext(Dispatchers.Main) {
-                spawnNextPiece()
+                spawnSavedPiece(pieceToSpawn)
             }
         }
     }
