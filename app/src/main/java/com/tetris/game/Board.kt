@@ -108,9 +108,13 @@ class Board(
                 }
             }
 
-            // Remove completed lines
+            // Remove all completed lines first (from bottom to top to maintain indices)
             linesToClear.sortedDescending().forEach { y ->
                 grid.removeAt(y)
+            }
+
+            // Then add empty lines at the top
+            repeat(linesToClear.size) {
                 grid.add(0, MutableList(width) { null })
             }
 
