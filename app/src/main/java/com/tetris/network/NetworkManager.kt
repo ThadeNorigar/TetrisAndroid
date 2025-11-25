@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.os.Build
 import android.util.Log
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
@@ -185,8 +186,11 @@ class NetworkManager(private val context: Context) {
      * Start discovering available games
      */
     fun startDiscovery() {
-        Log.d(tag, "=== startDiscovery() called ===")
+        Log.d(tag, "=== Starting Discovery Mode ===")
         Log.d(tag, "Service type to discover: $serviceType")
+
+        // Check WiFi connectivity
+        checkWiFiConnectivity()
 
         // Acquire multicast lock for NSD to work properly
         acquireMulticastLock()
@@ -490,8 +494,16 @@ class NetworkManager(private val context: Context) {
 
         val registrationListener = object : NsdManager.RegistrationListener {
             override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                Log.e(tag, "✗ Service registration FAILED: errorCode=$errorCode")
-                Log.e(tag, "Failed service name: ${serviceInfo.serviceName}")
+                Log.e(tag, "✗ Service registration FAILED")
+                Log.e(tag, "  - Error code: $errorCode")
+                Log.e(tag, "  - Service name: ${serviceInfo.serviceName}")
+                Log.e(tag, "  - Service type: ${serviceInfo.serviceType}")
+                when (errorCode) {
+                    NsdManager.FAILURE_ALREADY_ACTIVE -> Log.e(tag, "  - Reason: Service already registered")
+                    NsdManager.FAILURE_INTERNAL_ERROR -> Log.e(tag, "  - Reason: Internal NSD error")
+                    NsdManager.FAILURE_MAX_LIMIT -> Log.e(tag, "  - Reason: Maximum outstanding requests reached")
+                    else -> Log.e(tag, "  - Reason: Unknown error")
+                }
             }
 
             override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
@@ -594,6 +606,78 @@ class NetworkManager(private val context: Context) {
                 processNextResolve()
             }
         }
+    }
+
+    /**
+     * Check WiFi connectivity and log network information
+     */
+    private fun checkWiFiConnectivity() {
+        try {
+            // Check if running on emulator
+            val isEmulator = Build.FINGERPRINT.contains("generic") ||
+                    Build.FINGERPRINT.startsWith("unknown") ||
+                    Build.MODEL.contains("google_sdk") ||
+                    Build.MODEL.contains("Emulator") ||
+                    Build.MODEL.contains("Android SDK") ||
+                    Build.MANUFACTURER.contains("Genymotion") ||
+                    Build.PRODUCT.contains("sdk_gphone") ||
+                    Build.PRODUCT.contains("sdk") ||
+                    Build.PRODUCT.contains("sdk_x86") ||
+                    Build.PRODUCT.contains("vbox86p") ||
+                    Build.PRODUCT.contains("emulator") ||
+                    Build.HARDWARE.contains("goldfish") ||
+                    Build.HARDWARE.contains("ranchu")
+
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val isWifiEnabled = wifiManager.isWifiEnabled
+
+            Log.d(tag, "=== Network Diagnostics ===")
+            Log.d(tag, "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            Log.d(tag, "Running on emulator: $isEmulator")
+
+            if (isEmulator) {
+                Log.w(tag, "")
+                Log.w(tag, "⚠️  WARNING: Android Emulator Detected!")
+                Log.w(tag, "   NSD (Network Service Discovery) does NOT work in the Android Emulator.")
+                Log.w(tag, "   Please test on physical devices connected to the same WiFi network.")
+                Log.w(tag, "")
+            }
+
+            Log.d(tag, "WiFi Enabled: $isWifiEnabled")
+
+            if (isWifiEnabled) {
+                val wifiInfo = wifiManager.connectionInfo
+                Log.d(tag, "SSID: ${wifiInfo.ssid}")
+                Log.d(tag, "IP Address: ${formatIpAddress(wifiInfo.ipAddress)}")
+                Log.d(tag, "Link Speed: ${wifiInfo.linkSpeed} Mbps")
+                Log.d(tag, "RSSI: ${wifiInfo.rssi}")
+
+                // Get DHCP Info
+                val dhcpInfo = wifiManager.dhcpInfo
+                Log.d(tag, "Gateway: ${formatIpAddress(dhcpInfo.gateway)}")
+                Log.d(tag, "Netmask: ${formatIpAddress(dhcpInfo.netmask)}")
+                Log.d(tag, "DNS1: ${formatIpAddress(dhcpInfo.dns1)}")
+            } else {
+                Log.e(tag, "✗ WiFi is DISABLED! NSD requires WiFi to be enabled.")
+            }
+
+            Log.d(tag, "=========================")
+        } catch (e: Exception) {
+            Log.e(tag, "Error checking WiFi connectivity", e)
+        }
+    }
+
+    /**
+     * Format IP address from integer to string
+     */
+    private fun formatIpAddress(ip: Int): String {
+        return String.format(
+            "%d.%d.%d.%d",
+            ip and 0xff,
+            (ip shr 8) and 0xff,
+            (ip shr 16) and 0xff,
+            (ip shr 24) and 0xff
+        )
     }
 
     /**
