@@ -258,7 +258,9 @@ class TetrisGame(
 
         // Center horizontally
         val startX = (board.width - tetromino.shape[0].size) / 2
-        return tetromino.copy(x = startX, y = 0)
+        // Spawn at y = -1 to allow pieces to enter from above the visible board
+        // This prevents false game over when the top row has blocks
+        return tetromino.copy(x = startX, y = -1)
     }
 
     private fun spawnNextPiece() {
