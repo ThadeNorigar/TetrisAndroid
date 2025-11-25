@@ -168,6 +168,11 @@ fun GameBoard(
                             val x = piece.x + col
                             val y = piece.y + row
                             if (y >= 0 && y < boardHeight && x >= 0 && x < boardWidth) {
+                                // Skip blocks in lines being cleared (for animation)
+                                if (lineClearAnimation.contains(y)) {
+                                    return@forEachIndexed
+                                }
+
                                 if (useGraphics && blocksSpritesheet != null) {
                                     // Draw block from spritesheet
                                     drawBlockFromSpritesheet(
