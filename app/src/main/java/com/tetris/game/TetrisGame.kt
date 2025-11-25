@@ -256,35 +256,28 @@ class TetrisGame(
         val color = colorScheme[type] ?: Color.White
         val tetromino = Tetromino.create(type, color)
 
-        // Center horizontally
+        // Center horizontally and spawn at top of visible board
         val startX = (board.width - tetromino.shape[0].size) / 2
-        // Spawn at y = -1 to allow pieces to enter from above the visible board
-        // This prevents false game over when the top row has blocks
-        return tetromino.copy(x = startX, y = -1)
+        return tetromino.copy(x = startX, y = 0)
     }
 
     private fun spawnNextPiece() {
         _currentPiece.value = _nextPiece.value
         _nextPiece.value = spawnPiece()
-
-        // Check if game over (collision at spawn position)
-        val piece = _currentPiece.value
-        if (piece != null && board.checkCollision(piece)) {
-            val stats = _stats.value
-            _gameState.value = GameState.GameOver(
-                score = stats.score,
-                level = stats.level,
-                lines = stats.linesCleared
-            )
-            gameLoopJob?.cancel()
-        }
     }
 
     private fun spawnSavedPiece(piece: Tetromino?) {
         _currentPiece.value = piece
+    }
 
-        // Check if game over (collision at spawn position)
-        if (piece != null && board.checkCollision(piece)) {
+    private fun checkGameOver(piece: Tetromino): Boolean {
+        // Game over if piece has blocks above visible area (y < 0) when locked
+        val hasBlocksAboveBoard = piece.shape.indices.any { row ->
+            val y = piece.y + row
+            y < 0 && piece.shape[row].any { it != 0 }
+        }
+
+        if (hasBlocksAboveBoard) {
             val stats = _stats.value
             _gameState.value = GameState.GameOver(
                 score = stats.score,
@@ -292,11 +285,18 @@ class TetrisGame(
                 lines = stats.linesCleared
             )
             gameLoopJob?.cancel()
+            return true
         }
+        return false
     }
 
     private fun lockPiece() {
         val piece = _currentPiece.value ?: return
+
+        // Check for game over: piece being locked has blocks above visible area (y < 0)
+        if (checkGameOver(piece)) {
+            return
+        }
 
         board.lockTetromino(piece)
 
