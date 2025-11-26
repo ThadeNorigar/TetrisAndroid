@@ -65,6 +65,14 @@ sealed class GameMessage {
     ) : GameMessage()
 
     /**
+     * Board state update - sends the entire board grid
+     */
+    @Serializable
+    data class BoardUpdate(
+        val board: List<List<Int?>>  // Grid of color values (ARGB as Int, null for empty)
+    ) : GameMessage()
+
+    /**
      * Game over notification
      */
     @Serializable
