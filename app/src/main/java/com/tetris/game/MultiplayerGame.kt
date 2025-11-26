@@ -49,6 +49,9 @@ class MultiplayerGameViewModel(
     // Track lines cleared to send as garbage
     private var lastLinesCleared = 0
 
+    // Track if we were ever connected (to distinguish initial state from disconnection)
+    private var wasConnected = false
+
     init {
         startGame()
         observeNetworkMessages()
@@ -109,6 +112,8 @@ class MultiplayerGameViewModel(
                         Log.d(tag, "Connection lost, reconnecting... (attempt ${state.attempt})")
                     }
                     is com.tetris.network.ConnectionState.Connected -> {
+                        // Mark that we successfully connected
+                        wasConnected = true
                         // Resume game after reconnection
                         if (localGame.gameState.value is GameState.Paused) {
                             localGame.resumeGame()
@@ -116,10 +121,12 @@ class MultiplayerGameViewModel(
                         }
                     }
                     is com.tetris.network.ConnectionState.Disconnected -> {
-                        // Connection permanently lost
-                        if (_winner.value == null) {
-                            // If no winner yet, treat as opponent disconnection
+                        // Only treat as disconnection if we were previously connected
+                        // This prevents treating the initial state as a disconnection
+                        if (wasConnected && _winner.value == null) {
+                            // Connection permanently lost after being connected
                             _winner.value = Winner.LocalPlayer
+                            Log.d(tag, "Opponent disconnected, local player wins")
                         }
                     }
                     else -> {}
