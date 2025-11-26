@@ -328,15 +328,19 @@ class NetworkManager(private val context: Context) {
      * Start receiving messages from socket
      */
     private fun startReceivingMessages(socket: Socket) {
+        Log.d(tag, "=== startReceivingMessages() CALLED ===")
         // Cancel previous receive job if exists
         receiveJob?.cancel()
 
         receiveJob = scope.launch {
             try {
+                Log.d(tag, "Opening read channel...")
                 val receiveChannel = socket.openReadChannel()
+                Log.d(tag, "✓ Read channel opened, starting to listen for messages")
 
                 while (isActive) {
                     try {
+                        Log.d(tag, "Waiting for message...")
                         val line = receiveChannel.readUTF8Line() ?: break
                         if (line.isNotEmpty()) {
                             val message = json.decodeFromString<GameMessage>(line)
@@ -344,20 +348,23 @@ class NetworkManager(private val context: Context) {
                             Log.d(tag, "Received message: $message")
                         }
                     } catch (e: Exception) {
-                        Log.e(tag, "Error reading message", e)
+                        Log.e(tag, "✗ Error reading message", e)
+                        Log.e(tag, "isActive: $isActive, socket.isClosed: ${socket.isClosed}")
                         break
                     }
                 }
 
                 // Connection lost - attempt reconnection
+                Log.d(tag, "Exited receive loop, connection lost")
                 keepAliveJob?.cancel()
                 handleDisconnection()
             } catch (e: Exception) {
-                Log.e(tag, "Error in receive loop", e)
+                Log.e(tag, "✗ Error in receive loop", e)
                 keepAliveJob?.cancel()
                 handleDisconnection()
             }
         }
+        Log.d(tag, "✓ Receive job started")
     }
 
     /**
@@ -665,6 +672,8 @@ class NetworkManager(private val context: Context) {
      * Disconnect and cleanup
      */
     fun disconnect() {
+        Log.d(tag, "=== disconnect() CALLED ===")
+        Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
         scope.launch {
             keepAliveJob?.cancel()
             reconnectJob?.cancel()
@@ -688,6 +697,7 @@ class NetworkManager(private val context: Context) {
             releaseMulticastLock()
 
             _connectionState.value = ConnectionState.Disconnected
+            Log.d(tag, "=== disconnect() COMPLETED ===")
         }
     }
 

@@ -230,12 +230,15 @@ class MultiplayerGameViewModel(
      * Can be called manually when returning to menu
      */
     fun cleanup() {
+        Log.d(tag, "=== cleanup() CALLED ===")
+        Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
         localGame.dispose()
         networkManager.disconnect()
     }
 
     override fun onCleared() {
         super.onCleared()
+        Log.d(tag, "=== onCleared() CALLED ===")
         cleanup()
     }
 }
