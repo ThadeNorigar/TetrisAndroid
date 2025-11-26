@@ -103,27 +103,43 @@ class MultiplayerGameViewModel(
             }
         }
 
-        // Send board updates periodically (every 100ms for smooth display)
+        // Send board updates periodically (every 500ms for better stability)
         viewModelScope.launch {
+            var lastBoardState: List<List<Color?>> = emptyList()
             while (true) {
-                delay(100)
+                delay(500)  // Reduced from 100ms to 500ms to avoid flooding
                 if (localGame.gameState.value is GameState.Playing) {
-                    sendBoardUpdate()
+                    // Only send if board actually changed
+                    val currentBoard = localGame.boardState.value
+                    if (currentBoard != lastBoardState) {
+                        try {
+                            sendBoardUpdate()
+                            lastBoardState = currentBoard
+                        } catch (e: Exception) {
+                            Log.e(tag, "Failed to send board update", e)
+                        }
+                    }
                 }
             }
         }
 
-        // Send stats updates periodically
+        // Send stats updates periodically (debounced)
         viewModelScope.launch {
-            localGame.stats.collect { stats ->
-                networkManager.sendMessage(
-                    GameMessage.StatsUpdate(
-                        score = stats.score,
-                        level = stats.level,
-                        linesCleared = stats.linesCleared
-                    )
-                )
-            }
+            localGame.stats
+                .debounce(300)  // Debounce to avoid flooding
+                .collect { stats ->
+                    try {
+                        networkManager.sendMessage(
+                            GameMessage.StatsUpdate(
+                                score = stats.score,
+                                level = stats.level,
+                                linesCleared = stats.linesCleared
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.e(tag, "Failed to send stats update", e)
+                    }
+                }
         }
     }
 
