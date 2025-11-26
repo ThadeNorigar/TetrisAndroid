@@ -10,6 +10,8 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
@@ -39,7 +41,7 @@ class NetworkManager(private val context: Context) {
     private var serverSocket: ServerSocket? = null
     private var clientSocket: Socket? = null
     private var writeChannel: ByteWriteChannel? = null
-    private val writeLock = Any()  // Synchronize write operations
+    private val writeMutex = Mutex()  // Synchronize write operations for coroutines
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
     private var receiveJob: Job? = null
@@ -312,8 +314,8 @@ class NetworkManager(private val context: Context) {
             val jsonString = json.encodeToString(message)
             val messageWithDelimiter = "$jsonString\n"
 
-            // Synchronize writes to prevent concurrent access issues
-            synchronized(writeLock) {
+            // Use mutex to prevent concurrent write access in coroutines
+            writeMutex.withLock {
                 channel.writeStringUtf8(messageWithDelimiter)
                 channel.flush()
             }
