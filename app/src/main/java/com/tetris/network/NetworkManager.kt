@@ -38,6 +38,8 @@ class NetworkManager(private val context: Context) {
     private var selectorManager: SelectorManager? = null
     private var serverSocket: ServerSocket? = null
     private var clientSocket: Socket? = null
+    private var writeChannel: ByteWriteChannel? = null
+    private val writeLock = Any()  // Synchronize write operations
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
     private var receiveJob: Job? = null
@@ -140,8 +142,10 @@ class NetworkManager(private val context: Context) {
                     if (socket != null) {
                         Log.d(tag, "✓ Client connected from: ${socket.remoteAddress}")
                         clientSocket = socket
+                        writeChannel = socket.openWriteChannel(autoFlush = true)
                         reconnectAttempts = 0
                         _connectionState.value = ConnectionState.Connected
+                        Log.d(tag, "✓ Write channel established")
                         startKeepAlive()
                         startReceivingMessages(socket)
                         Log.d(tag, "✓ Client connection fully established")
@@ -278,10 +282,12 @@ class NetworkManager(private val context: Context) {
             )
 
             clientSocket = socket
+            writeChannel = socket.openWriteChannel(autoFlush = true)
             lastConnectedPlayer = playerInfo
             isHost = false
             reconnectAttempts = 0
             _connectionState.value = ConnectionState.Connected
+            Log.d(tag, "Write channel established")
             startKeepAlive()
             startReceivingMessages(socket)
 
@@ -299,22 +305,23 @@ class NetworkManager(private val context: Context) {
      */
     suspend fun sendMessage(message: GameMessage): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val socket = clientSocket ?: return@withContext Result.failure(
-                Exception("Not connected")
+            val channel = writeChannel ?: return@withContext Result.failure(
+                Exception("Not connected - write channel not initialized")
             )
 
             val jsonString = json.encodeToString(message)
             val messageWithDelimiter = "$jsonString\n"
 
-            // Use the channel without explicitly closing it (reuse existing connection channel)
-            socket.openWriteChannel(autoFlush = true).apply {
-                writeStringUtf8(messageWithDelimiter)
-                flush()
+            // Synchronize writes to prevent concurrent access issues
+            synchronized(writeLock) {
+                channel.writeStringUtf8(messageWithDelimiter)
+                channel.flush()
             }
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(tag, "Error sending message", e)
+            Log.e(tag, "Error sending message: ${e.message}", e)
+            // Connection likely broken, trigger disconnection handling
             Result.failure(e)
         }
     }
@@ -396,7 +403,8 @@ class NetworkManager(private val context: Context) {
         try {
             Log.d(tag, "Waiting for client to reconnect (attempt $reconnectAttempts)...")
 
-            // Close old socket
+            // Close old socket and channel
+            writeChannel = null
             clientSocket?.close()
             clientSocket = null
 
@@ -407,8 +415,10 @@ class NetworkManager(private val context: Context) {
 
             if (socket != null) {
                 clientSocket = socket
+                writeChannel = socket.openWriteChannel(autoFlush = true)
                 reconnectAttempts = 0
                 _connectionState.value = ConnectionState.Connected
+                Log.d(tag, "Write channel re-established")
                 startKeepAlive()
                 startReceivingMessages(socket)
                 Log.d(tag, "Client reconnected successfully")
@@ -431,7 +441,8 @@ class NetworkManager(private val context: Context) {
         try {
             Log.d(tag, "Attempting to reconnect to ${playerInfo.name} (attempt $reconnectAttempts)...")
 
-            // Close old socket
+            // Close old socket and channel
+            writeChannel = null
             clientSocket?.close()
             clientSocket = null
 
@@ -445,8 +456,10 @@ class NetworkManager(private val context: Context) {
             )
 
             clientSocket = socket
+            writeChannel = socket.openWriteChannel(autoFlush = true)
             reconnectAttempts = 0
             _connectionState.value = ConnectionState.Connected
+            Log.d(tag, "Write channel re-established")
             startKeepAlive()
             startReceivingMessages(socket)
             Log.d(tag, "Reconnected successfully to ${playerInfo.name}")
@@ -740,6 +753,7 @@ class NetworkManager(private val context: Context) {
             receiveJob?.cancel()
 
             try {
+                writeChannel = null
                 clientSocket?.close()
                 serverSocket?.close()
             } catch (e: Exception) {
