@@ -392,17 +392,27 @@ private fun MultiplayerGameOverDialog(
                 text = when (winner) {
                     is Winner.LocalPlayer -> "YOU WIN!"
                     is Winner.Opponent -> "YOU LOSE"
+                    is Winner.Disconnected -> "CONNECTION LOST"
                 },
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = when (winner) {
                     is Winner.LocalPlayer -> theme.textHighlight
                     is Winner.Opponent -> Color.Red
+                    is Winner.Disconnected -> Color(0xFFFF9800) // Orange
                 }
             )
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (winner is Winner.Disconnected) {
+                    Text(
+                        text = "The connection to your opponent was lost.",
+                        fontSize = 16.sp,
+                        color = theme.textPrimary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
                 Text(
                     text = "Your Score: ${localStats.score}",
                     fontSize = 18.sp,

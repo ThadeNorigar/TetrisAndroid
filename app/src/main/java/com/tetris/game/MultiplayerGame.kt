@@ -125,8 +125,8 @@ class MultiplayerGameViewModel(
                         // This prevents treating the initial state as a disconnection
                         if (wasConnected && _winner.value == null) {
                             // Connection permanently lost after being connected
-                            _winner.value = Winner.LocalPlayer
-                            Log.d(tag, "Opponent disconnected, local player wins")
+                            _winner.value = Winner.Disconnected
+                            Log.d(tag, "Connection lost - game ended")
                         }
                     }
                     else -> {}
@@ -164,7 +164,7 @@ class MultiplayerGameViewModel(
 
             is GameMessage.PlayerDisconnected -> {
                 // Opponent disconnected
-                _winner.value = Winner.LocalPlayer
+                _winner.value = Winner.Disconnected
             }
 
             else -> {
@@ -244,6 +244,7 @@ class MultiplayerGameViewModel(
  * Winner of the multiplayer game
  */
 sealed class Winner {
-    object LocalPlayer : Winner()
-    object Opponent : Winner()
+    object LocalPlayer : Winner()      // Local player won by opponent losing
+    object Opponent : Winner()          // Opponent won by local player losing
+    object Disconnected : Winner()      // Connection lost
 }
