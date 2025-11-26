@@ -3,11 +3,13 @@ package com.tetris.game
 import android.app.Application
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tetris.network.GameMessage
 import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.TetrisTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -60,6 +62,14 @@ class MultiplayerGameViewModel(
     }
 
     private fun startGame() {
+        // Reset all state for a fresh game
+        _opponentBoardState.value = emptyList()
+        _opponentStats.value = GameStats()
+        _opponentCurrentPiece.value = null
+        _opponentNextPiece.value = null
+        _winner.value = null
+        lastLinesCleared = 0
+
         localGame.startGame()
     }
 
@@ -90,6 +100,29 @@ class MultiplayerGameViewModel(
                         )
                     )
                 }
+            }
+        }
+
+        // Send board updates periodically (every 100ms for smooth display)
+        viewModelScope.launch {
+            while (true) {
+                delay(100)
+                if (localGame.gameState.value is GameState.Playing) {
+                    sendBoardUpdate()
+                }
+            }
+        }
+
+        // Send stats updates periodically
+        viewModelScope.launch {
+            localGame.stats.collect { stats ->
+                networkManager.sendMessage(
+                    GameMessage.StatsUpdate(
+                        score = stats.score,
+                        level = stats.level,
+                        linesCleared = stats.linesCleared
+                    )
+                )
             }
         }
     }
@@ -145,6 +178,20 @@ class MultiplayerGameViewModel(
                 )
             }
 
+            is GameMessage.BoardUpdate -> {
+                // Convert Int colors back to Color objects
+                val boardWithColors = message.board.map { row ->
+                    row.map { colorInt ->
+                        if (colorInt != null) {
+                            androidx.compose.ui.graphics.Color(colorInt)
+                        } else {
+                            null
+                        }
+                    }
+                }
+                _opponentBoardState.value = boardWithColors
+            }
+
             is GameMessage.PieceUpdate -> {
                 // Update opponent's current piece position
                 // Note: This is simplified - in a full implementation,
@@ -170,6 +217,22 @@ class MultiplayerGameViewModel(
             else -> {
                 Log.d(tag, "Unhandled message: $message")
             }
+        }
+    }
+
+    private fun sendBoardUpdate() {
+        viewModelScope.launch {
+            // Get current board state and convert Colors to Int (ARGB)
+            val boardState = localGame.boardState.value
+            val boardAsInts: List<List<Int?>> = boardState.map { row: List<Color?> ->
+                row.map { color: Color? ->
+                    color?.toArgb()
+                }
+            }
+
+            networkManager.sendMessage(
+                GameMessage.BoardUpdate(board = boardAsInts)
+            )
         }
     }
 

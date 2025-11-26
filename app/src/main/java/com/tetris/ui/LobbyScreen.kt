@@ -171,11 +171,9 @@ fun LobbyScreen(
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.cancelAndGoBack()
-        }
-    }
+    // NOTE: DisposableEffect removed here - was causing disconnect on navigation to game
+    // cleanup() will be called by ViewModel.onCleared() when app is destroyed
+    // cancel buttons explicitly call cancelAndGoBack() when user wants to cancel
 
     Box(
         modifier = modifier

@@ -130,7 +130,7 @@ fun MultiplayerGameScreen(
                         currentPiece = localCurrentPiece,
                         lineClearAnimation = localLineClearAnimation,
                         theme = theme,
-                        useGraphics = false,
+                        useGraphics = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.5f)
@@ -163,7 +163,7 @@ fun MultiplayerGameScreen(
                         currentPiece = null, // We don't sync piece positions in real-time
                         lineClearAnimation = emptySet(),
                         theme = theme,
-                        useGraphics = false,
+                        useGraphics = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.5f)
@@ -184,7 +184,7 @@ fun MultiplayerGameScreen(
                         onMoveDown = { viewModel.moveDown() },
                         onRotate = { viewModel.rotatePiece() },
                         onHardDrop = { viewModel.hardDrop() },
-                        useGraphics = false,
+                        useGraphics = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
