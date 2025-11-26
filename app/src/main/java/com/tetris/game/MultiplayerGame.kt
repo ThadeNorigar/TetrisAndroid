@@ -3,11 +3,13 @@ package com.tetris.game
 import android.app.Application
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tetris.network.GameMessage
 import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.TetrisTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -222,8 +224,8 @@ class MultiplayerGameViewModel(
         viewModelScope.launch {
             // Get current board state and convert Colors to Int (ARGB)
             val boardState = localGame.boardState.value
-            val boardAsInts = boardState.map { row ->
-                row.map { color ->
+            val boardAsInts: List<List<Int?>> = boardState.map { row: List<Color?> ->
+                row.map { color: Color? ->
                     color?.toArgb()
                 }
             }
