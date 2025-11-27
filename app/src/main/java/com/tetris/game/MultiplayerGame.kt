@@ -85,10 +85,10 @@ class MultiplayerGameViewModel(
     private val sendingJobs = mutableListOf<kotlinx.coroutines.Job>()
 
     init {
-        startGame()
         observeNetworkMessages()
         observeLocalGameState()
         observeConnectionState()
+        startGame() // This will also call startSendingUpdates()
     }
 
     private fun startGame() {
@@ -104,7 +104,11 @@ class MultiplayerGameViewModel(
         lastLinesCleared = 0
 
         localGame.startGame()
-        Log.d(tag, "Game started - all state reset with empty 20x10 board")
+
+        // Restart sending updates for new game
+        startSendingUpdates()
+
+        Log.d(tag, "Game started - all state reset with empty 20x10 board, sending restarted")
     }
 
     private fun observeLocalGameState() {
@@ -139,6 +143,17 @@ class MultiplayerGameViewModel(
                 }
             }
         })
+    }
+
+    /**
+     * Start sending game updates over network
+     * Creates coroutines to send board, stats, and piece updates
+     */
+    private fun startSendingUpdates() {
+        // Cancel any existing sending jobs first
+        sendingJobs.forEach { it.cancel() }
+        sendingJobs.clear()
+        Log.d(tag, "Starting sending updates...")
 
         // Send board updates periodically (every 500ms for better stability)
         sendingJobs.add(viewModelScope.launch {
@@ -223,6 +238,8 @@ class MultiplayerGameViewModel(
                     }
                 }
         })
+
+        Log.d(tag, "All sending jobs started")
     }
 
     private fun observeNetworkMessages() {
