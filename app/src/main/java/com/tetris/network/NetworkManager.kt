@@ -692,6 +692,10 @@ class NetworkManager(private val context: Context) {
         Log.d(tag, "=== disconnect() CALLED ===")
         Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
 
+        // Clear old messages to prevent them from affecting new games
+        _receivedMessages.value = null
+        Log.d(tag, "Cleared received messages")
+
         // Prevent reconnection attempts
         shouldReconnect = false
         Log.d(tag, "shouldReconnect set to false")
