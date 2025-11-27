@@ -28,8 +28,13 @@ class MultiplayerGameViewModel(
     // Local player's game
     val localGame = TetrisGame(theme.shapeColors)
 
+    // Create empty board helper
+    private fun createEmptyBoard(): List<List<Color?>> {
+        return List(20) { List(10) { null } }  // 20 rows x 10 columns
+    }
+
     // Opponent's game state (read-only, updated via network)
-    private val _opponentBoardState = MutableStateFlow<List<List<Color?>>>(emptyList())
+    private val _opponentBoardState = MutableStateFlow<List<List<Color?>>>(createEmptyBoard())
     val opponentBoardState: StateFlow<List<List<Color?>>> = _opponentBoardState.asStateFlow()
 
     private val _opponentStats = MutableStateFlow(GameStats())
@@ -74,7 +79,7 @@ class MultiplayerGameViewModel(
 
     private fun startGame() {
         // Reset all state for a fresh game
-        _opponentBoardState.value = emptyList()
+        _opponentBoardState.value = createEmptyBoard()  // Proper empty board, not emptyList()
         _opponentStats.value = GameStats()
         _opponentCurrentPiece.value = null
         _opponentNextPiece.value = null
@@ -85,7 +90,7 @@ class MultiplayerGameViewModel(
         lastLinesCleared = 0
 
         localGame.startGame()
-        Log.d(tag, "Game started - all state reset")
+        Log.d(tag, "Game started - all state reset with empty 20x10 board")
     }
 
     private fun observeLocalGameState() {
