@@ -110,6 +110,12 @@ sealed class GameMessage {
     object PlayAgainRequest : GameMessage()
 
     /**
+     * Player left the game (back to menu)
+     */
+    @Serializable
+    object PlayerLeftGame : GameMessage()
+
+    /**
      * Player disconnected
      */
     @Serializable

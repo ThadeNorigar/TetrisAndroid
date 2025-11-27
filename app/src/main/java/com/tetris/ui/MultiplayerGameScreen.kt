@@ -69,6 +69,7 @@ fun MultiplayerGameScreen(
     val connectionState by viewModel.connectionState.collectAsState()
     val localPlayerReady by viewModel.localPlayerReady.collectAsState()
     val opponentReady by viewModel.opponentReady.collectAsState()
+    val opponentLeft by viewModel.opponentLeft.collectAsState()
 
     // Show winner dialog
     if (winner != null) {
@@ -78,11 +79,12 @@ fun MultiplayerGameScreen(
             theme = theme,
             localPlayerReady = localPlayerReady,
             opponentReady = opponentReady,
+            opponentLeft = opponentLeft,
             onPlayAgain = {
                 viewModel.requestPlayAgain()
             },
             onBackToMenu = {
-                viewModel.cleanup()
+                viewModel.leaveGame()
                 onBackToMenu()
             }
         )
@@ -412,6 +414,7 @@ private fun MultiplayerGameOverDialog(
     theme: TetrisTheme,
     localPlayerReady: Boolean,
     opponentReady: Boolean,
+    opponentLeft: Boolean,
     onPlayAgain: () -> Unit,
     onBackToMenu: () -> Unit
 ) {
@@ -459,8 +462,18 @@ private fun MultiplayerGameOverDialog(
                         color = theme.textSecondary
                     )
 
-                    // Show waiting status if local player is ready
-                    if (localPlayerReady && !opponentReady) {
+                    // Show opponent left message
+                    if (opponentLeft) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Opponent has left the game",
+                            fontSize = 14.sp,
+                            color = Color(0xFFFF9800), // Orange
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    // Show waiting status if local player is ready and opponent hasn't left
+                    else if (localPlayerReady && !opponentReady) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -487,8 +500,8 @@ private fun MultiplayerGameOverDialog(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Only show PLAY AGAIN if not disconnected
-                if (winner !is Winner.Disconnected) {
+                // Only show PLAY AGAIN if not disconnected and opponent hasn't left
+                if (winner !is Winner.Disconnected && !opponentLeft) {
                     Button(
                         onClick = onPlayAgain,
                         enabled = !localPlayerReady, // Disable after clicking
@@ -508,8 +521,8 @@ private fun MultiplayerGameOverDialog(
                 Button(
                     onClick = onBackToMenu,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (winner is Winner.Disconnected) theme.textHighlight else theme.gridBorder,
-                        contentColor = if (winner is Winner.Disconnected) theme.background else theme.textPrimary
+                        containerColor = if (winner is Winner.Disconnected || opponentLeft) theme.textHighlight else theme.gridBorder,
+                        contentColor = if (winner is Winner.Disconnected || opponentLeft) theme.background else theme.textPrimary
                     )
                 ) {
                     Text("BACK TO MENU", fontSize = 16.sp, fontWeight = FontWeight.Bold)

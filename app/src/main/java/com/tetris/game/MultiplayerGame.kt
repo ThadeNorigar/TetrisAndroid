@@ -52,6 +52,10 @@ class MultiplayerGameViewModel(
     private val _opponentReady = MutableStateFlow(false)
     val opponentReady: StateFlow<Boolean> = _opponentReady.asStateFlow()
 
+    // Track if opponent left the game
+    private val _opponentLeft = MutableStateFlow(false)
+    val opponentLeft: StateFlow<Boolean> = _opponentLeft.asStateFlow()
+
     // Connection state from network manager
     val connectionState: StateFlow<com.tetris.network.ConnectionState> = networkManager.connectionState
 
@@ -77,6 +81,7 @@ class MultiplayerGameViewModel(
         _winner.value = null
         _localPlayerReady.value = false
         _opponentReady.value = false
+        _opponentLeft.value = false
         lastLinesCleared = 0
 
         localGame.startGame()
@@ -325,6 +330,13 @@ class MultiplayerGameViewModel(
                 }
             }
 
+            is GameMessage.PlayerLeftGame -> {
+                // Opponent left to menu
+                _opponentLeft.value = true
+                _opponentReady.value = false
+                Log.d(tag, "Opponent left the game")
+            }
+
             is GameMessage.PlayerDisconnected -> {
                 // Opponent disconnected
                 _winner.value = Winner.Disconnected
@@ -421,6 +433,24 @@ class MultiplayerGameViewModel(
             Log.d(tag, "Both players ready - starting new game")
             startGame()
         }
+    }
+
+    /**
+     * Leave the game and return to menu
+     * Notifies opponent before disconnecting
+     */
+    fun leaveGame() {
+        Log.d(tag, "=== leaveGame() CALLED ===")
+        // Notify opponent that we're leaving
+        viewModelScope.launch {
+            try {
+                networkManager.sendMessage(GameMessage.PlayerLeftGame)
+                delay(100) // Give time for message to send
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to send PlayerLeftGame message", e)
+            }
+        }
+        cleanup()
     }
 
     /**
