@@ -70,6 +70,9 @@ class MultiplayerGameViewModel(
     // Track if we were ever connected (to distinguish initial state from disconnection)
     private var wasConnected = false
 
+    // Track if cleanup was already called
+    private var cleanedUp = false
+
     init {
         startGame()
         observeNetworkMessages()
@@ -450,12 +453,15 @@ class MultiplayerGameViewModel(
         viewModelScope.launch {
             try {
                 networkManager.sendMessage(GameMessage.PlayerLeftGame)
-                delay(100) // Give time for message to send
+                delay(200) // Give more time for message to send
+                Log.d(tag, "PlayerLeftGame message sent, now cleaning up")
             } catch (e: Exception) {
                 Log.e(tag, "Failed to send PlayerLeftGame message", e)
+            } finally {
+                // Always cleanup, even if send fails
+                cleanup()
             }
         }
-        cleanup()
     }
 
     /**
@@ -463,10 +469,17 @@ class MultiplayerGameViewModel(
      * Can be called manually when returning to menu
      */
     fun cleanup() {
+        if (cleanedUp) {
+            Log.d(tag, "cleanup() already called, skipping")
+            return
+        }
+        cleanedUp = true
+
         Log.d(tag, "=== cleanup() CALLED ===")
         Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
         localGame.dispose()
         networkManager.disconnect()
+        Log.d(tag, "=== cleanup() COMPLETED ===")
     }
 
     override fun onCleared() {
