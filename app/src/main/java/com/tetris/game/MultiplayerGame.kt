@@ -73,6 +73,9 @@ class MultiplayerGameViewModel(
     // Track if cleanup was already called
     private var cleanedUp = false
 
+    // Callback for when cleanup is complete
+    private var onCleanupComplete: (() -> Unit)? = null
+
     init {
         startGame()
         observeNetworkMessages()
@@ -446,8 +449,9 @@ class MultiplayerGameViewModel(
     /**
      * Leave the game and return to menu
      * Notifies opponent before disconnecting
+     * Calls onComplete callback after cleanup is finished
      */
-    fun leaveGame() {
+    fun leaveGame(onComplete: () -> Unit) {
         Log.d(tag, "=== leaveGame() CALLED ===")
         // Notify opponent that we're leaving
         viewModelScope.launch {
@@ -460,6 +464,9 @@ class MultiplayerGameViewModel(
             } finally {
                 // Always cleanup, even if send fails
                 cleanup()
+                // Call completion callback after cleanup finishes
+                Log.d(tag, "Cleanup complete, calling onComplete callback")
+                onComplete()
             }
         }
     }

@@ -84,8 +84,10 @@ fun MultiplayerGameScreen(
                 viewModel.requestPlayAgain()
             },
             onBackToMenu = {
-                viewModel.leaveGame()
-                onBackToMenu()
+                // Wait for cleanup to complete before navigating
+                viewModel.leaveGame {
+                    onBackToMenu()
+                }
             }
         )
     }
@@ -255,8 +257,10 @@ fun MultiplayerGameScreen(
 
                     Button(
                         onClick = {
-                            viewModel.cleanup()
-                            onBackToMenu()
+                            // Wait for cleanup to complete before navigating
+                            viewModel.leaveGame {
+                                onBackToMenu()
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = theme.gridBorder,
