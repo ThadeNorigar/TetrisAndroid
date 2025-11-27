@@ -73,6 +73,27 @@ sealed class GameMessage {
     ) : GameMessage()
 
     /**
+     * Current piece update - sends the currently falling piece
+     */
+    @Serializable
+    data class CurrentPieceUpdate(
+        val type: String,               // TetrominoType name (I, O, T, S, Z, J, L)
+        val shape: List<List<Int>>,     // Current shape (after rotation)
+        val colorInt: Int,              // Color as ARGB Int
+        val x: Int,                     // X position
+        val y: Int                      // Y position
+    ) : GameMessage()
+
+    /**
+     * Next piece update - sends the next piece in queue
+     */
+    @Serializable
+    data class NextPieceUpdate(
+        val type: String,               // TetrominoType name (I, O, T, S, Z, J, L)
+        val colorInt: Int               // Color as ARGB Int
+    ) : GameMessage()
+
+    /**
      * Game over notification
      */
     @Serializable

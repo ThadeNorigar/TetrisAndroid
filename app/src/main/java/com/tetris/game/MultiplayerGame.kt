@@ -141,6 +141,45 @@ class MultiplayerGameViewModel(
                     }
                 }
         }
+
+        // Send current piece updates
+        viewModelScope.launch {
+            localGame.currentPiece.collect { piece ->
+                if (piece != null) {
+                    try {
+                        networkManager.sendMessage(
+                            GameMessage.CurrentPieceUpdate(
+                                type = piece.type.name,
+                                shape = piece.shape,
+                                colorInt = piece.color.toArgb(),
+                                x = piece.x,
+                                y = piece.y
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.e(tag, "Failed to send current piece update", e)
+                    }
+                }
+            }
+        }
+
+        // Send next piece updates
+        viewModelScope.launch {
+            localGame.nextPiece.collect { piece ->
+                if (piece != null) {
+                    try {
+                        networkManager.sendMessage(
+                            GameMessage.NextPieceUpdate(
+                                type = piece.type.name,
+                                colorInt = piece.color.toArgb()
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.e(tag, "Failed to send next piece update", e)
+                    }
+                }
+            }
+        }
     }
 
     private fun observeNetworkMessages() {
@@ -208,10 +247,38 @@ class MultiplayerGameViewModel(
                 _opponentBoardState.value = boardWithColors
             }
 
+            is GameMessage.CurrentPieceUpdate -> {
+                // Update opponent's current piece
+                try {
+                    val type = TetrominoType.valueOf(message.type)
+                    val color = Color(message.colorInt)
+                    val piece = Tetromino(
+                        type = type,
+                        shape = message.shape,
+                        color = color,
+                        x = message.x,
+                        y = message.y
+                    )
+                    _opponentCurrentPiece.value = piece
+                } catch (e: Exception) {
+                    Log.e(tag, "Failed to parse current piece update", e)
+                }
+            }
+
+            is GameMessage.NextPieceUpdate -> {
+                // Update opponent's next piece
+                try {
+                    val type = TetrominoType.valueOf(message.type)
+                    val color = Color(message.colorInt)
+                    val piece = Tetromino.create(type, color)
+                    _opponentNextPiece.value = piece
+                } catch (e: Exception) {
+                    Log.e(tag, "Failed to parse next piece update", e)
+                }
+            }
+
             is GameMessage.PieceUpdate -> {
-                // Update opponent's current piece position
-                // Note: This is simplified - in a full implementation,
-                // you'd need to track piece type and rotation
+                // Legacy message - now using CurrentPieceUpdate instead
                 Log.d(tag, "Opponent piece update: (${message.x}, ${message.y})")
             }
 

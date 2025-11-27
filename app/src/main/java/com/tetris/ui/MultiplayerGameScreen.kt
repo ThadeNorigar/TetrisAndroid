@@ -22,6 +22,7 @@ import com.tetris.network.NetworkManager
 import com.tetris.ui.theme.TetrisTheme
 import com.tetris.ui.components.GameBoard
 import com.tetris.ui.components.GameControls
+import com.tetris.ui.components.NextPiecePreview
 import androidx.compose.material3.CircularProgressIndicator
 
 /**
@@ -60,6 +61,9 @@ fun MultiplayerGameScreen(
     val opponentStats by viewModel.opponentStats.collectAsState()
     val opponentBoard by viewModel.opponentBoardState.collectAsState()
     val opponentCurrentPiece by viewModel.opponentCurrentPiece.collectAsState()
+    val opponentNextPiece by viewModel.opponentNextPiece.collectAsState()
+
+    val localNextPiece by viewModel.localGame.nextPiece.collectAsState()
 
     val winner by viewModel.winner.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
@@ -124,6 +128,14 @@ fun MultiplayerGameScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
 
+                    // Next Piece Preview
+                    NextPiecePreview(
+                        nextPiece = localNextPiece,
+                        theme = theme,
+                        useGraphics = true,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
                     // Board
                     GameBoard(
                         board = localBoard,
@@ -157,10 +169,18 @@ fun MultiplayerGameScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
 
-                    // Board (read-only, no current piece animation)
+                    // Next Piece Preview
+                    NextPiecePreview(
+                        nextPiece = opponentNextPiece,
+                        theme = theme,
+                        useGraphics = true,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    // Board - now showing opponent's current piece in real-time
                     GameBoard(
                         board = opponentBoard,
-                        currentPiece = null, // We don't sync piece positions in real-time
+                        currentPiece = opponentCurrentPiece,
                         lineClearAnimation = emptySet(),
                         theme = theme,
                         useGraphics = true,
