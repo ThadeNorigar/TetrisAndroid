@@ -81,6 +81,9 @@ class MultiplayerGameViewModel(
     private var observeConnectionJob: kotlinx.coroutines.Job? = null
     private val observeLocalGameJobs = mutableListOf<kotlinx.coroutines.Job>()
 
+    // Separate list for sending jobs that should stop on GameOver
+    private val sendingJobs = mutableListOf<kotlinx.coroutines.Job>()
+
     init {
         startGame()
         observeNetworkMessages()
@@ -124,6 +127,7 @@ class MultiplayerGameViewModel(
                     // Local player lost
                     _winner.value = Winner.Opponent
                     localGame.pauseGame() // Stop the game immediately
+                    stopSendingUpdates() // Stop sending network updates
                     networkManager.sendMessage(
                         GameMessage.GameOver(
                             score = state.score,
@@ -131,13 +135,13 @@ class MultiplayerGameViewModel(
                             linesCleared = state.lines
                         )
                     )
-                    Log.d(tag, "Local player lost - game stopped")
+                    Log.d(tag, "Local player lost - game stopped, updates stopped")
                 }
             }
         })
 
         // Send board updates periodically (every 500ms for better stability)
-        observeLocalGameJobs.add(viewModelScope.launch {
+        sendingJobs.add(viewModelScope.launch {
             var lastBoardState: List<List<Color?>> = emptyList()
             while (true) {
                 delay(500)  // Reduced from 100ms to 500ms to avoid flooding
@@ -157,7 +161,7 @@ class MultiplayerGameViewModel(
         })
 
         // Send stats updates periodically (debounced)
-        observeLocalGameJobs.add(viewModelScope.launch {
+        sendingJobs.add(viewModelScope.launch {
             localGame.stats
                 .debounce(300)  // Debounce to avoid flooding
                 .collect { stats ->
@@ -176,7 +180,7 @@ class MultiplayerGameViewModel(
         })
 
         // Send current piece updates (sampled to avoid flooding while showing animations)
-        observeLocalGameJobs.add(viewModelScope.launch {
+        sendingJobs.add(viewModelScope.launch {
             localGame.currentPiece
                 .sample(30)  // Sample every 30ms - captures more animation frames
                 .collect { piece ->
@@ -200,7 +204,7 @@ class MultiplayerGameViewModel(
         })
 
         // Send next piece updates (debounced)
-        observeLocalGameJobs.add(viewModelScope.launch {
+        sendingJobs.add(viewModelScope.launch {
             localGame.nextPiece
                 .debounce(100)  // Next piece changes less frequently
                 .collect { piece ->
@@ -332,7 +336,8 @@ class MultiplayerGameViewModel(
                 // Opponent lost, local player wins!
                 _winner.value = Winner.LocalPlayer
                 localGame.pauseGame() // Stop the winner's game immediately
-                Log.d(tag, "Opponent lost - local player wins, game stopped")
+                stopSendingUpdates() // Stop sending network updates
+                Log.d(tag, "Opponent lost - local player wins, game stopped, updates stopped")
             }
 
             is GameMessage.PlayAgainRequest -> {
@@ -477,6 +482,17 @@ class MultiplayerGameViewModel(
     }
 
     /**
+     * Stop sending game updates over network
+     * Called when game ends to prevent sending updates after GameOver
+     */
+    private fun stopSendingUpdates() {
+        Log.d(tag, "Stopping sending updates...")
+        sendingJobs.forEach { it.cancel() }
+        sendingJobs.clear()
+        Log.d(tag, "All sending jobs cancelled")
+    }
+
+    /**
      * Cleanup resources when leaving the game
      * Can be called manually when returning to menu
      */
@@ -496,6 +512,8 @@ class MultiplayerGameViewModel(
         observeConnectionJob?.cancel()
         observeLocalGameJobs.forEach { it.cancel() }
         observeLocalGameJobs.clear()
+        sendingJobs.forEach { it.cancel() }
+        sendingJobs.clear()
         Log.d(tag, "All observation jobs cancelled")
 
         localGame.dispose()
