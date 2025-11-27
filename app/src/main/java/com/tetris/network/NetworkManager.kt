@@ -60,6 +60,7 @@ class NetworkManager(private val context: Context) {
     private val maxReconnectAttempts = 5
     private var keepAliveJob: Job? = null
     private var reconnectJob: Job? = null
+    private var shouldReconnect = true  // Flag to control reconnection attempts
 
     // State flows
     private val _discoveredPlayers = MutableStateFlow<List<PlayerInfo>>(emptyList())
@@ -78,6 +79,11 @@ class NetworkManager(private val context: Context) {
         Log.d(tag, "=== startHosting() CALLED ===")
         Log.d(tag, "Player name: $playerName")
         Log.d(tag, "Thread: ${Thread.currentThread().name}")
+
+        // Enable reconnection for this new game
+        shouldReconnect = true
+        reconnectAttempts = 0
+        Log.d(tag, "shouldReconnect set to true, reconnectAttempts reset")
 
         try {
             // Step 1: Acquire multicast lock for NSD to work properly
@@ -270,6 +276,10 @@ class NetworkManager(private val context: Context) {
         try {
             _connectionState.value = ConnectionState.Connecting
 
+            // Enable reconnection for this new game
+            shouldReconnect = true
+            Log.d(tag, "shouldReconnect set to true")
+
             // Initialize SelectorManager if not already created
             if (selectorManager == null) {
                 selectorManager = SelectorManager(Dispatchers.IO)
@@ -371,6 +381,13 @@ class NetworkManager(private val context: Context) {
      * Handle disconnection and attempt reconnect
      */
     private fun handleDisconnection() {
+        // Check if we should attempt reconnection
+        if (!shouldReconnect) {
+            Log.d(tag, "shouldReconnect=false, skipping reconnection")
+            _connectionState.value = ConnectionState.Disconnected
+            return
+        }
+
         scope.launch {
             Log.d(tag, "Connection lost, attempting to reconnect...")
             _connectionState.value = ConnectionState.Reconnecting(reconnectAttempts + 1)
@@ -674,6 +691,11 @@ class NetworkManager(private val context: Context) {
     fun disconnect() {
         Log.d(tag, "=== disconnect() CALLED ===")
         Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
+
+        // Prevent reconnection attempts
+        shouldReconnect = false
+        Log.d(tag, "shouldReconnect set to false")
+
         scope.launch {
             keepAliveJob?.cancel()
             reconnectJob?.cancel()
