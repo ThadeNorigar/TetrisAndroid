@@ -76,6 +76,11 @@ class MultiplayerGameViewModel(
     // Callback for when cleanup is complete
     private var onCleanupComplete: (() -> Unit)? = null
 
+    // Jobs for observation coroutines that need to be cancelled on cleanup
+    private var observeNetworkJob: kotlinx.coroutines.Job? = null
+    private var observeConnectionJob: kotlinx.coroutines.Job? = null
+    private val observeLocalGameJobs = mutableListOf<kotlinx.coroutines.Job>()
+
     init {
         startGame()
         observeNetworkMessages()
@@ -101,7 +106,7 @@ class MultiplayerGameViewModel(
 
     private fun observeLocalGameState() {
         // Monitor local game stats to detect line clears
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             localGame.stats.collect { stats ->
                 val newLinesCleared = stats.linesCleared - lastLinesCleared
                 if (newLinesCleared > 0) {
@@ -110,10 +115,10 @@ class MultiplayerGameViewModel(
                     lastLinesCleared = stats.linesCleared
                 }
             }
-        }
+        })
 
         // Monitor local game state for game over
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             localGame.gameState.collect { state ->
                 if (state is GameState.GameOver) {
                     // Local player lost
@@ -129,10 +134,10 @@ class MultiplayerGameViewModel(
                     Log.d(tag, "Local player lost - game stopped")
                 }
             }
-        }
+        })
 
         // Send board updates periodically (every 500ms for better stability)
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             var lastBoardState: List<List<Color?>> = emptyList()
             while (true) {
                 delay(500)  // Reduced from 100ms to 500ms to avoid flooding
@@ -149,10 +154,10 @@ class MultiplayerGameViewModel(
                     }
                 }
             }
-        }
+        })
 
         // Send stats updates periodically (debounced)
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             localGame.stats
                 .debounce(300)  // Debounce to avoid flooding
                 .collect { stats ->
@@ -168,10 +173,10 @@ class MultiplayerGameViewModel(
                         Log.e(tag, "Failed to send stats update", e)
                     }
                 }
-        }
+        })
 
         // Send current piece updates (sampled to avoid flooding while showing animations)
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             localGame.currentPiece
                 .sample(30)  // Sample every 30ms - captures more animation frames
                 .collect { piece ->
@@ -192,10 +197,10 @@ class MultiplayerGameViewModel(
                         }
                     }
                 }
-        }
+        })
 
         // Send next piece updates (debounced)
-        viewModelScope.launch {
+        observeLocalGameJobs.add(viewModelScope.launch {
             localGame.nextPiece
                 .debounce(100)  // Next piece changes less frequently
                 .collect { piece ->
@@ -213,11 +218,11 @@ class MultiplayerGameViewModel(
                         }
                     }
                 }
-        }
+        })
     }
 
     private fun observeNetworkMessages() {
-        viewModelScope.launch {
+        observeNetworkJob = viewModelScope.launch {
             networkManager.receivedMessages.collect { message ->
                 message?.let { handleNetworkMessage(it) }
             }
@@ -225,7 +230,7 @@ class MultiplayerGameViewModel(
     }
 
     private fun observeConnectionState() {
-        viewModelScope.launch {
+        observeConnectionJob = viewModelScope.launch {
             connectionState.collect { state ->
                 when (state) {
                     is com.tetris.network.ConnectionState.Reconnecting -> {
@@ -484,6 +489,15 @@ class MultiplayerGameViewModel(
 
         Log.d(tag, "=== cleanup() CALLED ===")
         Log.d(tag, "Stack trace: ${Exception().stackTraceToString()}")
+
+        // Cancel all observation coroutines
+        Log.d(tag, "Cancelling observation jobs...")
+        observeNetworkJob?.cancel()
+        observeConnectionJob?.cancel()
+        observeLocalGameJobs.forEach { it.cancel() }
+        observeLocalGameJobs.clear()
+        Log.d(tag, "All observation jobs cancelled")
+
         localGame.dispose()
         networkManager.disconnect()
         Log.d(tag, "=== cleanup() COMPLETED ===")
