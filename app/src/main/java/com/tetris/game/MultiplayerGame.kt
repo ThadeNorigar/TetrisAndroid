@@ -142,10 +142,10 @@ class MultiplayerGameViewModel(
                 }
         }
 
-        // Send current piece updates (debounced to avoid flooding)
+        // Send current piece updates (sampled to avoid flooding while showing animations)
         viewModelScope.launch {
             localGame.currentPiece
-                .debounce(50)  // Debounce to 50ms for smooth but not excessive updates
+                .sample(50)  // Sample every 50ms - shows animations better than debounce
                 .collect { piece ->
                     if (piece != null) {
                         try {
@@ -378,6 +378,14 @@ class MultiplayerGameViewModel(
     fun hardDrop() = localGame.hardDrop()
     fun pauseGame() = localGame.pauseGame()
     fun resumeGame() = localGame.resumeGame()
+
+    /**
+     * Restart the game - reset all state and start fresh
+     */
+    fun restartGame() {
+        Log.d(tag, "Restarting game...")
+        startGame()
+    }
 
     /**
      * Cleanup resources when leaving the game

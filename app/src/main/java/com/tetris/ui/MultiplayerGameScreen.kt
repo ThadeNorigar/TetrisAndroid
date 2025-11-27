@@ -74,6 +74,9 @@ fun MultiplayerGameScreen(
             winner = winner!!,
             localStats = localStats,
             theme = theme,
+            onPlayAgain = {
+                viewModel.restartGame()
+            },
             onBackToMenu = {
                 viewModel.cleanup()
                 onBackToMenu()
@@ -403,6 +406,7 @@ private fun MultiplayerGameOverDialog(
     winner: Winner,
     localStats: GameStats,
     theme: TetrisTheme,
+    onPlayAgain: () -> Unit,
     onBackToMenu: () -> Unit
 ) {
     AlertDialog(
@@ -432,33 +436,51 @@ private fun MultiplayerGameOverDialog(
                         color = theme.textPrimary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
+                } else {
+                    Text(
+                        text = "Your Score: ${localStats.score}",
+                        fontSize = 18.sp,
+                        color = theme.textPrimary
+                    )
+                    Text(
+                        text = "Level: ${localStats.level}",
+                        fontSize = 16.sp,
+                        color = theme.textSecondary
+                    )
+                    Text(
+                        text = "Lines: ${localStats.linesCleared}",
+                        fontSize = 16.sp,
+                        color = theme.textSecondary
+                    )
                 }
-                Text(
-                    text = "Your Score: ${localStats.score}",
-                    fontSize = 18.sp,
-                    color = theme.textPrimary
-                )
-                Text(
-                    text = "Level: ${localStats.level}",
-                    fontSize = 16.sp,
-                    color = theme.textSecondary
-                )
-                Text(
-                    text = "Lines: ${localStats.linesCleared}",
-                    fontSize = 16.sp,
-                    color = theme.textSecondary
-                )
             }
         },
         confirmButton = {
-            Button(
-                onClick = onBackToMenu,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.textHighlight,
-                    contentColor = theme.background
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("BACK TO MENU", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                // Only show PLAY AGAIN if not disconnected
+                if (winner !is Winner.Disconnected) {
+                    Button(
+                        onClick = onPlayAgain,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = theme.textHighlight,
+                            contentColor = theme.background
+                        )
+                    ) {
+                        Text("PLAY AGAIN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Button(
+                    onClick = onBackToMenu,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (winner is Winner.Disconnected) theme.textHighlight else theme.gridBorder,
+                        contentColor = if (winner is Winner.Disconnected) theme.background else theme.textPrimary
+                    )
+                ) {
+                    Text("BACK TO MENU", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
         },
         containerColor = theme.background,
