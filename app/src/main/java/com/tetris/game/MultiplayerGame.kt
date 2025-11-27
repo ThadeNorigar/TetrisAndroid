@@ -45,6 +45,13 @@ class MultiplayerGameViewModel(
     private val _winner = MutableStateFlow<Winner?>(null)
     val winner: StateFlow<Winner?> = _winner.asStateFlow()
 
+    // Play again ready states
+    private val _localPlayerReady = MutableStateFlow(false)
+    val localPlayerReady: StateFlow<Boolean> = _localPlayerReady.asStateFlow()
+
+    private val _opponentReady = MutableStateFlow(false)
+    val opponentReady: StateFlow<Boolean> = _opponentReady.asStateFlow()
+
     // Connection state from network manager
     val connectionState: StateFlow<com.tetris.network.ConnectionState> = networkManager.connectionState
 
@@ -68,9 +75,12 @@ class MultiplayerGameViewModel(
         _opponentCurrentPiece.value = null
         _opponentNextPiece.value = null
         _winner.value = null
+        _localPlayerReady.value = false
+        _opponentReady.value = false
         lastLinesCleared = 0
 
         localGame.startGame()
+        Log.d(tag, "Game started - all state reset")
     }
 
     private fun observeLocalGameState() {
@@ -92,6 +102,7 @@ class MultiplayerGameViewModel(
                 if (state is GameState.GameOver) {
                     // Local player lost
                     _winner.value = Winner.Opponent
+                    localGame.pauseGame() // Stop the game immediately
                     networkManager.sendMessage(
                         GameMessage.GameOver(
                             score = state.score,
@@ -99,6 +110,7 @@ class MultiplayerGameViewModel(
                             linesCleared = state.lines
                         )
                     )
+                    Log.d(tag, "Local player lost - game stopped")
                 }
             }
         }
@@ -145,7 +157,7 @@ class MultiplayerGameViewModel(
         // Send current piece updates (sampled to avoid flooding while showing animations)
         viewModelScope.launch {
             localGame.currentPiece
-                .sample(50)  // Sample every 50ms - shows animations better than debounce
+                .sample(30)  // Sample every 30ms - captures more animation frames
                 .collect { piece ->
                     if (piece != null) {
                         try {
@@ -298,6 +310,19 @@ class MultiplayerGameViewModel(
             is GameMessage.GameOver -> {
                 // Opponent lost, local player wins!
                 _winner.value = Winner.LocalPlayer
+                localGame.pauseGame() // Stop the winner's game immediately
+                Log.d(tag, "Opponent lost - local player wins, game stopped")
+            }
+
+            is GameMessage.PlayAgainRequest -> {
+                // Opponent wants to play again
+                _opponentReady.value = true
+                Log.d(tag, "Opponent ready to play again")
+                // Check if both players are ready
+                if (_localPlayerReady.value && _opponentReady.value) {
+                    Log.d(tag, "Both players ready - starting new game")
+                    startGame()
+                }
             }
 
             is GameMessage.PlayerDisconnected -> {
@@ -380,11 +405,22 @@ class MultiplayerGameViewModel(
     fun resumeGame() = localGame.resumeGame()
 
     /**
-     * Restart the game - reset all state and start fresh
+     * Request to play again - waits for both players to be ready
      */
-    fun restartGame() {
-        Log.d(tag, "Restarting game...")
-        startGame()
+    fun requestPlayAgain() {
+        Log.d(tag, "Local player wants to play again")
+        _localPlayerReady.value = true
+
+        // Send play again request to opponent
+        viewModelScope.launch {
+            networkManager.sendMessage(GameMessage.PlayAgainRequest)
+        }
+
+        // Check if both players are ready
+        if (_localPlayerReady.value && _opponentReady.value) {
+            Log.d(tag, "Both players ready - starting new game")
+            startGame()
+        }
     }
 
     /**

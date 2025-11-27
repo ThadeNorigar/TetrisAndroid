@@ -67,6 +67,8 @@ fun MultiplayerGameScreen(
 
     val winner by viewModel.winner.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
+    val localPlayerReady by viewModel.localPlayerReady.collectAsState()
+    val opponentReady by viewModel.opponentReady.collectAsState()
 
     // Show winner dialog
     if (winner != null) {
@@ -74,8 +76,10 @@ fun MultiplayerGameScreen(
             winner = winner!!,
             localStats = localStats,
             theme = theme,
+            localPlayerReady = localPlayerReady,
+            opponentReady = opponentReady,
             onPlayAgain = {
-                viewModel.restartGame()
+                viewModel.requestPlayAgain()
             },
             onBackToMenu = {
                 viewModel.cleanup()
@@ -406,6 +410,8 @@ private fun MultiplayerGameOverDialog(
     winner: Winner,
     localStats: GameStats,
     theme: TetrisTheme,
+    localPlayerReady: Boolean,
+    opponentReady: Boolean,
     onPlayAgain: () -> Unit,
     onBackToMenu: () -> Unit
 ) {
@@ -452,6 +458,28 @@ private fun MultiplayerGameOverDialog(
                         fontSize = 16.sp,
                         color = theme.textSecondary
                     )
+
+                    // Show waiting status if local player is ready
+                    if (localPlayerReady && !opponentReady) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = theme.textHighlight,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Waiting for opponent...",
+                                fontSize = 14.sp,
+                                color = theme.textHighlight,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -463,12 +491,17 @@ private fun MultiplayerGameOverDialog(
                 if (winner !is Winner.Disconnected) {
                     Button(
                         onClick = onPlayAgain,
+                        enabled = !localPlayerReady, // Disable after clicking
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = theme.textHighlight,
+                            containerColor = if (localPlayerReady) theme.gridBorder else theme.textHighlight,
                             contentColor = theme.background
                         )
                     ) {
-                        Text("PLAY AGAIN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (localPlayerReady) "READY" else "PLAY AGAIN",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
 
