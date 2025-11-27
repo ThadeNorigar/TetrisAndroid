@@ -51,6 +51,14 @@ fun MultiplayerGameScreen(
         }
     )
 
+    // Cleanup when this composable leaves composition
+    // This ensures the ViewModel is cleaned up immediately when navigating away
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.cleanup()
+        }
+    }
+
     // Collect game states
     val localGameState by viewModel.localGame.gameState.collectAsState()
     val localStats by viewModel.localGame.stats.collectAsState()
