@@ -142,43 +142,49 @@ class MultiplayerGameViewModel(
                 }
         }
 
-        // Send current piece updates
+        // Send current piece updates (debounced to avoid flooding)
         viewModelScope.launch {
-            localGame.currentPiece.collect { piece ->
-                if (piece != null) {
-                    try {
-                        networkManager.sendMessage(
-                            GameMessage.CurrentPieceUpdate(
-                                type = piece.type.name,
-                                shape = piece.shape,
-                                colorInt = piece.color.toArgb(),
-                                x = piece.x,
-                                y = piece.y
+            localGame.currentPiece
+                .debounce(50)  // Debounce to 50ms for smooth but not excessive updates
+                .collect { piece ->
+                    if (piece != null) {
+                        try {
+                            networkManager.sendMessage(
+                                GameMessage.CurrentPieceUpdate(
+                                    type = piece.type.name,
+                                    shape = piece.shape,
+                                    colorInt = piece.color.toArgb(),
+                                    x = piece.x,
+                                    y = piece.y
+                                )
                             )
-                        )
-                    } catch (e: Exception) {
-                        Log.e(tag, "Failed to send current piece update", e)
+                            Log.d(tag, "Sent current piece: ${piece.type.name} at (${piece.x}, ${piece.y})")
+                        } catch (e: Exception) {
+                            Log.e(tag, "Failed to send current piece update", e)
+                        }
                     }
                 }
-            }
         }
 
-        // Send next piece updates
+        // Send next piece updates (debounced)
         viewModelScope.launch {
-            localGame.nextPiece.collect { piece ->
-                if (piece != null) {
-                    try {
-                        networkManager.sendMessage(
-                            GameMessage.NextPieceUpdate(
-                                type = piece.type.name,
-                                colorInt = piece.color.toArgb()
+            localGame.nextPiece
+                .debounce(100)  // Next piece changes less frequently
+                .collect { piece ->
+                    if (piece != null) {
+                        try {
+                            networkManager.sendMessage(
+                                GameMessage.NextPieceUpdate(
+                                    type = piece.type.name,
+                                    colorInt = piece.color.toArgb()
+                                )
                             )
-                        )
-                    } catch (e: Exception) {
-                        Log.e(tag, "Failed to send next piece update", e)
+                            Log.d(tag, "Sent next piece: ${piece.type.name}")
+                        } catch (e: Exception) {
+                            Log.e(tag, "Failed to send next piece update", e)
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -260,6 +266,7 @@ class MultiplayerGameViewModel(
                         y = message.y
                     )
                     _opponentCurrentPiece.value = piece
+                    Log.d(tag, "Received opponent current piece: ${type.name} at (${message.x}, ${message.y})")
                 } catch (e: Exception) {
                     Log.e(tag, "Failed to parse current piece update", e)
                 }
@@ -272,6 +279,7 @@ class MultiplayerGameViewModel(
                     val color = Color(message.colorInt)
                     val piece = Tetromino.create(type, color)
                     _opponentNextPiece.value = piece
+                    Log.d(tag, "Received opponent next piece: ${type.name}")
                 } catch (e: Exception) {
                     Log.e(tag, "Failed to parse next piece update", e)
                 }
