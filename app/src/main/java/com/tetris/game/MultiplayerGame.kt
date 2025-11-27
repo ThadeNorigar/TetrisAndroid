@@ -151,7 +151,7 @@ class MultiplayerGameViewModel(
                         try {
                             networkManager.sendMessage(
                                 GameMessage.CurrentPieceUpdate(
-                                    type = piece.type.name,
+                                    pieceType = piece.type.name,
                                     shape = piece.shape,
                                     colorInt = piece.color.toArgb(),
                                     x = piece.x,
@@ -175,7 +175,7 @@ class MultiplayerGameViewModel(
                         try {
                             networkManager.sendMessage(
                                 GameMessage.NextPieceUpdate(
-                                    type = piece.type.name,
+                                    pieceType = piece.type.name,
                                     colorInt = piece.color.toArgb()
                                 )
                             )
@@ -256,7 +256,7 @@ class MultiplayerGameViewModel(
             is GameMessage.CurrentPieceUpdate -> {
                 // Update opponent's current piece
                 try {
-                    val type = TetrominoType.valueOf(message.type)
+                    val type = TetrominoType.valueOf(message.pieceType)
                     val color = Color(message.colorInt)
                     val piece = Tetromino(
                         type = type,
@@ -275,7 +275,7 @@ class MultiplayerGameViewModel(
             is GameMessage.NextPieceUpdate -> {
                 // Update opponent's next piece
                 try {
-                    val type = TetrominoType.valueOf(message.type)
+                    val type = TetrominoType.valueOf(message.pieceType)
                     val color = Color(message.colorInt)
                     val piece = Tetromino.create(type, color)
                     _opponentNextPiece.value = piece
