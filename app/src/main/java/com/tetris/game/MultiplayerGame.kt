@@ -305,6 +305,14 @@ class MultiplayerGameViewModel(
                     }
                 }
                 _opponentBoardState.value = boardWithColors
+
+                // Clear opponent's current piece if it would collide with the new board
+                // This prevents the "disappearing piece" flicker when a piece locks
+                val currentPiece = _opponentCurrentPiece.value
+                if (currentPiece != null && wouldCollideWithBoard(currentPiece, boardWithColors)) {
+                    _opponentCurrentPiece.value = null
+                    Log.d(tag, "Cleared opponent current piece due to board collision (piece locked)")
+                }
             }
 
             is GameMessage.CurrentPieceUpdate -> {
@@ -384,6 +392,30 @@ class MultiplayerGameViewModel(
                 Log.d(tag, "Unhandled message: $message")
             }
         }
+    }
+
+    /**
+     * Check if a tetromino would collide with occupied cells in the board
+     * Used to detect when opponent's piece has been locked
+     */
+    private fun wouldCollideWithBoard(piece: Tetromino, board: List<List<Color?>>): Boolean {
+        for (row in piece.shape.indices) {
+            for (col in piece.shape[row].indices) {
+                if (piece.shape[row][col]) {
+                    val boardRow = piece.y + row
+                    val boardCol = piece.x + col
+
+                    // Check if position is within board bounds
+                    if (boardRow in board.indices && boardCol in board[boardRow].indices) {
+                        // Check if this position on the board is occupied
+                        if (board[boardRow][boardCol] != null) {
+                            return true  // Collision detected
+                        }
+                    }
+                }
+            }
+        }
+        return false  // No collision
     }
 
     private fun sendBoardUpdate() {
