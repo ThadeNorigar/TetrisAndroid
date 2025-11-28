@@ -1,0 +1,273 @@
+{
+  "name": "Corporate Identity Design System",
+  "version": "1.0.0",
+  "description": "Design system for PowerPoint presentations with dark red and olive green color scheme",
+
+  "colors": {
+    "primary": {
+      "main": "#8b0000",
+      "hover": "#a02020",
+      "light": "#a52a2a",
+      "lighter": "#c75a5a",
+      "dark": "#5e0000",
+      "darker": "#3d0000"
+    },
+    "secondary": {
+      "main": "#556b2f",
+      "hover": "#6b8e23",
+      "lighter": "#88a744",
+      "dark": "#3d4f20",
+      "darker": "#2a3a14"
+    },
+    "background": {
+      "main": "#f5f5f5",
+      "light": "#fafafa",
+      "lighter": "#ffffff",
+      "dark": "#e0e0e0",
+      "darker": "#cccccc"
+    },
+    "container": {
+      "bg": "#ffffff",
+      "bgAlt": "#fdfdfd",
+      "shadow": "#eeeeee"
+    },
+    "header": {
+      "bg": "#333333",
+      "bgLight": "#4d4d4d",
+      "bgDark": "#1a1a1a"
+    },
+    "text": {
+      "main": "#222222",
+      "light": "#444444",
+      "dark": "#111111",
+      "subtext": "#555555",
+      "subtextLight": "#777777",
+      "subtextDark": "#3a3a3a"
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "primary": "Segoe UI",
+      "secondary": "Calibri",
+      "monospace": "Courier New"
+    },
+    "fontSize": {
+      "h1": "44pt",
+      "h2": "36pt",
+      "h3": "28pt",
+      "h4": "24pt",
+      "body": "18pt",
+      "small": "14pt",
+      "caption": "12pt"
+    },
+    "fontWeight": {
+      "regular": "400",
+      "semibold": "600",
+      "bold": "700"
+    },
+    "lineHeight": {
+      "tight": "1.2",
+      "normal": "1.5",
+      "relaxed": "1.8"
+    }
+  },
+
+  "spacing": {
+    "xs": "8px",
+    "sm": "16px",
+    "md": "24px",
+    "lg": "32px",
+    "xl": "48px",
+    "xxl": "64px"
+  },
+
+  "slides": {
+    "titleSlide": {
+      "background": "#ffffff",
+      "titleColor": "#8b0000",
+      "subtitleColor": "#556b2f",
+      "accentBar": "#8b0000",
+      "accentBarHeight": "8px"
+    },
+    "contentSlide": {
+      "background": "#ffffff",
+      "headerBackground": "#333333",
+      "headerText": "#ffffff",
+      "bodyBackground": "#fafafa",
+      "bodyText": "#222222"
+    },
+    "sectionSlide": {
+      "background": "#8b0000",
+      "titleColor": "#ffffff",
+      "accentColor": "#88a744"
+    },
+    "closingSlide": {
+      "background": "#333333",
+      "titleColor": "#ffffff",
+      "accentColor": "#c75a5a"
+    }
+  },
+
+  "components": {
+    "buttons": {
+      "primary": {
+        "background": "#8b0000",
+        "text": "#ffffff",
+        "hover": "#a02020",
+        "border": "none",
+        "borderRadius": "4px"
+      },
+      "secondary": {
+        "background": "#556b2f",
+        "text": "#ffffff",
+        "hover": "#6b8e23",
+        "border": "none",
+        "borderRadius": "4px"
+      },
+      "outline": {
+        "background": "transparent",
+        "text": "#8b0000",
+        "hover": "#8b0000",
+        "hoverText": "#ffffff",
+        "border": "2px solid #8b0000",
+        "borderRadius": "4px"
+      }
+    },
+    "tables": {
+      "headerBackground": "#333333",
+      "headerText": "#ffffff",
+      "rowBackground": "#ffffff",
+      "rowAlternate": "#fafafa",
+      "rowText": "#222222",
+      "border": "#e0e0e0",
+      "borderWidth": "1px"
+    },
+    "charts": {
+      "series1": "#8b0000",
+      "series2": "#556b2f",
+      "series3": "#a52a2a",
+      "series4": "#6b8e23",
+      "series5": "#c75a5a",
+      "series6": "#88a744",
+      "gridLines": "#e0e0e0",
+      "axisLabels": "#555555"
+    },
+    "callouts": {
+      "info": {
+        "background": "#e3f2fd",
+        "border": "#2196f3",
+        "text": "#1565c0"
+      },
+      "success": {
+        "background": "#e8f5e9",
+        "border": "#556b2f",
+        "text": "#2a3a14"
+      },
+      "warning": {
+        "background": "#fff8e1",
+        "border": "#ffa726",
+        "text": "#e65100"
+      },
+      "danger": {
+        "background": "#ffebee",
+        "border": "#8b0000",
+        "text": "#3d0000"
+      }
+    },
+    "icons": {
+      "primary": "#8b0000",
+      "secondary": "#556b2f",
+      "neutral": "#555555",
+      "size": {
+        "small": "24px",
+        "medium": "32px",
+        "large": "48px",
+        "xlarge": "64px"
+      }
+    },
+    "dividers": {
+      "color": "#e0e0e0",
+      "thickness": "1px",
+      "accent": "#8b0000",
+      "accentThickness": "3px"
+    },
+    "bullets": {
+      "level1": {
+        "color": "#8b0000",
+        "style": "disc",
+        "indent": "0px"
+      },
+      "level2": {
+        "color": "#556b2f",
+        "style": "circle",
+        "indent": "24px"
+      },
+      "level3": {
+        "color": "#555555",
+        "style": "square",
+        "indent": "48px"
+      }
+    }
+  },
+
+  "layouts": {
+    "margins": {
+      "top": "48px",
+      "right": "64px",
+      "bottom": "48px",
+      "left": "64px"
+    },
+    "contentWidth": "80%",
+    "twoColumn": {
+      "leftWidth": "48%",
+      "rightWidth": "48%",
+      "gap": "4%"
+    },
+    "threeColumn": {
+      "columnWidth": "30%",
+      "gap": "5%"
+    }
+  },
+
+  "shadows": {
+    "small": "0 2px 4px rgba(0, 0, 0, 0.1)",
+    "medium": "0 4px 8px rgba(0, 0, 0, 0.15)",
+    "large": "0 8px 16px rgba(0, 0, 0, 0.2)"
+  },
+
+  "animation": {
+    "duration": {
+      "fast": "0.2s",
+      "normal": "0.3s",
+      "slow": "0.5s"
+    },
+    "easing": "ease-in-out"
+  },
+
+  "brandGuidelines": {
+    "logoPlacement": "top-left or top-right",
+    "logoSize": "height: 48-64px",
+    "minimumLogoSpace": "16px clearance on all sides",
+    "primaryColorUsage": "Headers, CTAs, important highlights",
+    "secondaryColorUsage": "Accents, icons, supporting elements",
+    "textColorContrast": "Ensure WCAG AA compliance (4.5:1 ratio minimum)"
+  },
+
+  "accessibility": {
+    "colorContrast": {
+      "primaryOnWhite": "Pass (WCAG AA)",
+      "secondaryOnWhite": "Pass (WCAG AA)",
+      "textOnWhite": "Pass (WCAG AAA)",
+      "whiteOnPrimary": "Pass (WCAG AAA)",
+      "whiteOnSecondary": "Pass (WCAG AA)"
+    },
+    "fontSizeMinimum": "14pt",
+    "recommendations": [
+      "Use high contrast colors for text",
+      "Avoid red-green combinations for color-blind users",
+      "Include text alternatives for color-coded information",
+      "Use sufficient white space for readability"
+    ]
+  }
+}
