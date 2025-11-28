@@ -158,7 +158,7 @@ class MultiplayerGameViewModel(
         // Send board updates periodically - now includes current piece for atomic sync
         sendingJobs.add(viewModelScope.launch {
             while (true) {
-                delay(100)  // 100ms = 10fps for board+piece atomic sync
+                delay(30)  // 30ms = 33fps for smooth atomic board+piece sync
                 if (localGame.gameState.value is GameState.Playing) {
                     // Send board update with current piece for atomic synchronization
                     // This ensures opponent always has consistent board+piece state
@@ -190,28 +190,12 @@ class MultiplayerGameViewModel(
                 }
         })
 
-        // Send current piece updates (sampled to avoid flooding while showing animations)
+        // Monitor for piece locking to send immediate update
         sendingJobs.add(viewModelScope.launch {
             localGame.currentPiece
-                .sample(30)  // Sample every 30ms - captures more animation frames
                 .collect { piece ->
-                    if (piece != null) {
-                        try {
-                            networkManager.sendMessage(
-                                GameMessage.CurrentPieceUpdate(
-                                    pieceType = piece.type.name,
-                                    shape = piece.shape,
-                                    colorInt = piece.color.toArgb(),
-                                    x = piece.x,
-                                    y = piece.y
-                                )
-                            )
-                            Log.d(tag, "Sent current piece: ${piece.type.name} at (${piece.x}, ${piece.y})")
-                        } catch (e: Exception) {
-                            Log.e(tag, "Failed to send current piece update", e)
-                        }
-                    } else {
-                        // Piece became null (locked) - send immediate board update to prevent visual gap
+                    if (piece == null && localGame.gameState.value is GameState.Playing) {
+                        // Piece became null (locked) - send immediate board update
                         try {
                             sendBoardUpdate()
                             Log.d(tag, "Piece locked - sent immediate board update")
@@ -338,22 +322,9 @@ class MultiplayerGameViewModel(
             }
 
             is GameMessage.CurrentPieceUpdate -> {
-                // Update opponent's current piece
-                try {
-                    val type = TetrominoType.valueOf(message.pieceType)
-                    val color = Color(message.colorInt)
-                    val piece = Tetromino(
-                        type = type,
-                        shape = message.shape,
-                        color = color,
-                        x = message.x,
-                        y = message.y
-                    )
-                    _opponentCurrentPiece.value = piece
-                    Log.d(tag, "Received opponent current piece: ${type.name} at (${message.x}, ${message.y})")
-                } catch (e: Exception) {
-                    Log.e(tag, "Failed to parse current piece update", e)
-                }
+                // DEPRECATED: CurrentPieceUpdate is now handled by BoardUpdate for atomic sync
+                // Keeping handler for backward compatibility but piece state comes from BoardUpdate
+                Log.d(tag, "Received deprecated CurrentPieceUpdate - ignoring (using BoardUpdate instead)")
             }
 
             is GameMessage.NextPieceUpdate -> {
