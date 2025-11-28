@@ -99,9 +99,9 @@ data class Tetromino(
 }
 
 enum class TetrominoType {
-    I, O, T, S, Z, J, L;
+    I, O, T, S, Z, J, L, GARBAGE;
 
     companion object {
-        fun random() = values().random()
+        fun random() = values().filter { it != GARBAGE }.random()
     }
 }

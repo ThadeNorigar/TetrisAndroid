@@ -1,6 +1,7 @@
 package com.tetris.ui
 
 import android.app.Application
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
@@ -11,7 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,10 +104,27 @@ fun MultiplayerGameScreen(
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(theme.background)
+        modifier = modifier.fillMaxSize()
     ) {
+        // Background image
+        val backgroundRes = try {
+            context.resources.getIdentifier("game_background", "drawable", context.packageName)
+        } catch (e: Exception) {
+            0
+        }
+
+        if (backgroundRes != 0) {
+            Image(
+                painter = painterResource(id = backgroundRes),
+                contentDescription = "Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // Fallback to solid color if image not found
+            Box(modifier = Modifier.fillMaxSize().background(theme.background))
+        }
+
         Column(
             modifier = Modifier.fillMaxSize()
         ) {

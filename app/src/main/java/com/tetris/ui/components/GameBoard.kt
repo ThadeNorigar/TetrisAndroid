@@ -309,7 +309,7 @@ fun NextPiecePreview(
 
 /**
  * Helper function to draw a block from the spritesheet
- * Spritesheet layout: Horizontal strip with 7 blocks (I, O, T, S, Z, J, L)
+ * Spritesheet layout: Horizontal strip with 8 blocks (I, O, T, S, Z, J, L, GARBAGE)
  */
 private fun DrawScope.drawBlockFromSpritesheet(
     spritesheet: Bitmap,
@@ -318,7 +318,7 @@ private fun DrawScope.drawBlockFromSpritesheet(
     y: Float,
     size: Float
 ) {
-    // Calculate the block index (0-6)
+    // Calculate the block index (0-7)
     val blockIndex = when (tetrominoType) {
         TetrominoType.I -> 0
         TetrominoType.O -> 1
@@ -327,10 +327,11 @@ private fun DrawScope.drawBlockFromSpritesheet(
         TetrominoType.Z -> 4
         TetrominoType.J -> 5
         TetrominoType.L -> 6
+        TetrominoType.GARBAGE -> 7
     }
 
     // Calculate spritesheet dimensions
-    val spriteWidth = spritesheet.width / 7 // 7 blocks in horizontal strip
+    val spriteWidth = spritesheet.width / 8 // 8 blocks in horizontal strip
     val spriteHeight = spritesheet.height
 
     // Source rectangle (portion of spritesheet to draw)
