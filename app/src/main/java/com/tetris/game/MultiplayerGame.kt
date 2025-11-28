@@ -155,6 +155,47 @@ class MultiplayerGameViewModel(
         sendingJobs.clear()
         Log.d(tag, "Starting sending updates...")
 
+        // Send initial state immediately to ensure synchronization
+        viewModelScope.launch {
+            // Send initial board + current piece
+            try {
+                sendBoardUpdate()
+                Log.d(tag, "Sent initial board update")
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to send initial board update", e)
+            }
+
+            // Send initial next piece
+            localGame.nextPiece.value?.let { piece ->
+                try {
+                    networkManager.sendMessage(
+                        GameMessage.NextPieceUpdate(
+                            pieceType = piece.type.name,
+                            colorInt = piece.color.toArgb()
+                        )
+                    )
+                    Log.d(tag, "Sent initial next piece: ${piece.type.name}")
+                } catch (e: Exception) {
+                    Log.e(tag, "Failed to send initial next piece", e)
+                }
+            }
+
+            // Send initial stats
+            try {
+                val stats = localGame.stats.value
+                networkManager.sendMessage(
+                    GameMessage.StatsUpdate(
+                        score = stats.score,
+                        level = stats.level,
+                        linesCleared = stats.linesCleared
+                    )
+                )
+                Log.d(tag, "Sent initial stats update")
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to send initial stats", e)
+            }
+        }
+
         // Send board updates periodically - now includes current piece for atomic sync
         sendingJobs.add(viewModelScope.launch {
             while (true) {
