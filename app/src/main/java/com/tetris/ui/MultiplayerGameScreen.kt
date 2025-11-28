@@ -214,23 +214,7 @@ fun MultiplayerGameScreen(
             Column(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                // Game controls
-                if (localGameState is GameState.Playing) {
-                    GameControls(
-                        theme = theme,
-                        onMoveLeft = { viewModel.moveLeft() },
-                        onMoveRight = { viewModel.moveRight() },
-                        onMoveDown = { viewModel.moveDown() },
-                        onRotate = { viewModel.rotatePiece() },
-                        onHardDrop = { viewModel.hardDrop() },
-                        useGraphics = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Menu button
+                // Quit button at top to prevent accidental presses
                 Button(
                     onClick = {
                         // Wait for cleanup to complete before navigating
@@ -245,6 +229,22 @@ fun MultiplayerGameScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("QUIT", fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Game controls
+                if (localGameState is GameState.Playing) {
+                    GameControls(
+                        theme = theme,
+                        onMoveLeft = { viewModel.moveLeft() },
+                        onMoveRight = { viewModel.moveRight() },
+                        onMoveDown = { viewModel.moveDown() },
+                        onRotate = { viewModel.rotatePiece() },
+                        onHardDrop = { viewModel.hardDrop() },
+                        useGraphics = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
