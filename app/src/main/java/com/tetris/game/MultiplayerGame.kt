@@ -411,10 +411,21 @@ class MultiplayerGameViewModel(
             }
 
             is GameMessage.PlayerLeftGame -> {
-                // Opponent left to menu
+                // Opponent left to menu - end game gracefully without reconnection
                 _opponentLeft.value = true
                 _opponentReady.value = false
-                Log.d(tag, "Opponent left the game")
+                _winner.value = Winner.Disconnected
+                localGame.pauseGame()
+                stopSendingUpdates()
+
+                // Disconnect cleanly to prevent reconnection attempts
+                viewModelScope.launch {
+                    delay(100) // Small delay to ensure message processing completes
+                    networkManager.disconnect()
+                    Log.d(tag, "Disconnected after opponent left")
+                }
+
+                Log.d(tag, "Opponent left the game - ending game gracefully")
             }
 
             is GameMessage.PlayerDisconnected -> {
