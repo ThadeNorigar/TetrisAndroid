@@ -155,21 +155,17 @@ class MultiplayerGameViewModel(
         sendingJobs.clear()
         Log.d(tag, "Starting sending updates...")
 
-        // Send board updates periodically (every 500ms for better stability)
+        // Send board updates periodically - now includes current piece for atomic sync
         sendingJobs.add(viewModelScope.launch {
-            var lastBoardState: List<List<Color?>> = emptyList()
             while (true) {
-                delay(500)  // Reduced from 100ms to 500ms to avoid flooding
+                delay(100)  // 100ms = 10fps for board+piece atomic sync
                 if (localGame.gameState.value is GameState.Playing) {
-                    // Only send if board actually changed
-                    val currentBoard = localGame.boardState.value
-                    if (currentBoard != lastBoardState) {
-                        try {
-                            sendBoardUpdate()
-                            lastBoardState = currentBoard
-                        } catch (e: Exception) {
-                            Log.e(tag, "Failed to send board update", e)
-                        }
+                    // Send board update with current piece for atomic synchronization
+                    // This ensures opponent always has consistent board+piece state
+                    try {
+                        sendBoardUpdate()
+                    } catch (e: Exception) {
+                        Log.e(tag, "Failed to send board update", e)
                     }
                 }
             }
@@ -314,12 +310,30 @@ class MultiplayerGameViewModel(
                 }
                 _opponentBoardState.value = boardWithColors
 
-                // Clear opponent's current piece if it would collide with the new board
-                // This prevents the "disappearing piece" flicker when a piece locks
-                val currentPiece = _opponentCurrentPiece.value
-                if (currentPiece != null && wouldCollideWithBoard(currentPiece, boardWithColors)) {
+                // Update current piece from board update for atomic synchronization
+                // This prevents visual gaps when pieces lock
+                if (message.currentPieceType != null && message.currentPieceShape != null &&
+                    message.currentPieceColor != null && message.currentPieceX != null &&
+                    message.currentPieceY != null) {
+                    try {
+                        val type = TetrominoType.valueOf(message.currentPieceType)
+                        val color = Color(message.currentPieceColor)
+                        val piece = Tetromino(
+                            type = type,
+                            shape = message.currentPieceShape,
+                            color = color,
+                            x = message.currentPieceX,
+                            y = message.currentPieceY
+                        )
+                        _opponentCurrentPiece.value = piece
+                        Log.d(tag, "Updated opponent piece from BoardUpdate: ${type.name} at (${message.currentPieceX}, ${message.currentPieceY})")
+                    } catch (e: Exception) {
+                        Log.e(tag, "Failed to parse current piece from BoardUpdate", e)
+                    }
+                } else {
+                    // No current piece in update - piece is locked or null
                     _opponentCurrentPiece.value = null
-                    Log.d(tag, "Cleared opponent current piece due to board collision (piece locked)")
+                    Log.d(tag, "Cleared opponent piece from BoardUpdate (piece locked)")
                 }
             }
 
@@ -436,8 +450,18 @@ class MultiplayerGameViewModel(
                 }
             }
 
+            // Include current piece in board update for atomic synchronization
+            val currentPiece = localGame.currentPiece.value
+
             networkManager.sendMessage(
-                GameMessage.BoardUpdate(board = boardAsInts)
+                GameMessage.BoardUpdate(
+                    board = boardAsInts,
+                    currentPieceType = currentPiece?.type?.name,
+                    currentPieceShape = currentPiece?.shape,
+                    currentPieceColor = currentPiece?.color?.toArgb(),
+                    currentPieceX = currentPiece?.x,
+                    currentPieceY = currentPiece?.y
+                )
             )
         }
     }

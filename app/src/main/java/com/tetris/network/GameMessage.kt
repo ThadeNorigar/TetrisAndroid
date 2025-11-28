@@ -66,10 +66,16 @@ sealed class GameMessage {
 
     /**
      * Board state update - sends the entire board grid
+     * Now includes current piece for atomic updates (prevents visual gaps)
      */
     @Serializable
     data class BoardUpdate(
-        val board: List<List<Int?>>  // Grid of color values (ARGB as Int, null for empty)
+        val board: List<List<Int?>>,         // Grid of color values (ARGB as Int, null for empty)
+        val currentPieceType: String? = null,    // Current piece type (null if no piece)
+        val currentPieceShape: List<List<Int>>? = null,  // Current piece shape
+        val currentPieceColor: Int? = null,      // Current piece color
+        val currentPieceX: Int? = null,          // Current piece X position
+        val currentPieceY: Int? = null           // Current piece Y position
     ) : GameMessage()
 
     /**
