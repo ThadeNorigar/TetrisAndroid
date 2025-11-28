@@ -39,7 +39,8 @@ val MinimalisticTheme = TetrisTheme(
         TetrominoType.S to Color(0xFF00FF00), // Green
         TetrominoType.Z to Color(0xFFFF0000), // Red
         TetrominoType.J to Color(0xFF0000FF), // Blue
-        TetrominoType.L to Color(0xFFFFA500)  // Orange
+        TetrominoType.L to Color(0xFFFFA500), // Orange
+        TetrominoType.GARBAGE to Color(0xFF808080) // Grey
     )
 )
 
@@ -63,7 +64,8 @@ val TronTheme = TetrisTheme(
         TetrominoType.S to Color(0xFF00FFD4),
         TetrominoType.Z to Color(0xFFFF006E),
         TetrominoType.J to Color(0xFF006EFF),
-        TetrominoType.L to Color(0xFFFF8C00)
+        TetrominoType.L to Color(0xFFFF8C00),
+        TetrominoType.GARBAGE to Color(0xFF404040) // Dark Grey
     )
 )
 
@@ -87,7 +89,8 @@ val NewYorkTheme = TetrisTheme(
         TetrominoType.S to Color(0xFF81C784),
         TetrominoType.Z to Color(0xFFE57373),
         TetrominoType.J to Color(0xFF64B5F6),
-        TetrominoType.L to Color(0xFFFFB74D)
+        TetrominoType.L to Color(0xFFFFB74D),
+        TetrominoType.GARBAGE to Color(0xFF808080) // Grey
     )
 )
 
@@ -111,7 +114,8 @@ val ArtDecoTheme = TetrisTheme(
         TetrominoType.S to Color(0xFF7DCEA0),
         TetrominoType.Z to Color(0xFFEC7063),
         TetrominoType.J to Color(0xFF5499C7),
-        TetrominoType.L to Color(0xFFF39C12)
+        TetrominoType.L to Color(0xFFF39C12),
+        TetrominoType.GARBAGE to Color(0xFF808080) // Grey
     )
 )
 
