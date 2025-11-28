@@ -401,7 +401,7 @@ class MultiplayerGameViewModel(
     private fun wouldCollideWithBoard(piece: Tetromino, board: List<List<Color?>>): Boolean {
         for (row in piece.shape.indices) {
             for (col in piece.shape[row].indices) {
-                if (piece.shape[row][col]) {
+                if (piece.shape[row][col] != 0) {
                     val boardRow = piece.y + row
                     val boardCol = piece.x + col
 
