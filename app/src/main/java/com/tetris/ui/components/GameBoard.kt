@@ -91,10 +91,10 @@ fun GameBoard(
         val finalWidth = calculatedFinalWidth * 0.95f
         val finalHeight = calculatedFinalHeight * 0.95f
 
-        // Frame border width: 10dp on top/left/right, 0dp on bottom
-        val frameBorderTop = 10.dp
-        val frameBorderSide = 10.dp
-        val frameBorderBottom = 0.dp
+        // Frame border width: symmetric borders to match frame image
+        val frameBorderTop = 8.dp    // Reduced slightly as frame starts too high
+        val frameBorderSide = 10.dp  // Sides are correct
+        val frameBorderBottom = 12.dp // Added to prevent frame from extending too far below
 
         // Adjust canvas size to include frame border
         val canvasWidth = finalWidth + (frameBorderSide * 2)
