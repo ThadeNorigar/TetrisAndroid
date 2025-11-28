@@ -230,54 +230,21 @@ fun MultiplayerGameScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Menu buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                // Menu button
+                Button(
+                    onClick = {
+                        // Wait for cleanup to complete before navigating
+                        viewModel.leaveGame {
+                            onBackToMenu()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = theme.gridBorder,
+                        contentColor = theme.textPrimary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (localGameState is GameState.Playing) {
-                        Button(
-                            onClick = { viewModel.pauseGame() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = theme.gridBorder,
-                                contentColor = theme.textPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("PAUSE", fontSize = 14.sp)
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-                    } else if (localGameState is GameState.Paused) {
-                        Button(
-                            onClick = { viewModel.resumeGame() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = theme.textHighlight,
-                                contentColor = theme.background
-                            ),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("RESUME", fontSize = 14.sp)
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-
-                    Button(
-                        onClick = {
-                            // Wait for cleanup to complete before navigating
-                            viewModel.leaveGame {
-                                onBackToMenu()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = theme.gridBorder,
-                            contentColor = theme.textPrimary
-                        ),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("QUIT", fontSize = 14.sp)
-                    }
+                    Text("QUIT", fontSize = 14.sp)
                 }
             }
         }

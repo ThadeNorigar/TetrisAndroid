@@ -291,6 +291,46 @@ class MultiplayerGameViewModel(
                     is com.tetris.network.ConnectionState.Connected -> {
                         // Mark that we successfully connected
                         wasConnected = true
+
+                        // Send current state to newly connected opponent
+                        viewModelScope.launch {
+                            delay(200) // Small delay to ensure opponent is ready to receive
+                            try {
+                                sendBoardUpdate()
+                                Log.d(tag, "Sent current board state on connection")
+                            } catch (e: Exception) {
+                                Log.e(tag, "Failed to send board state on connection", e)
+                            }
+
+                            localGame.nextPiece.value?.let { piece ->
+                                try {
+                                    networkManager.sendMessage(
+                                        GameMessage.NextPieceUpdate(
+                                            pieceType = piece.type.name,
+                                            colorInt = piece.color.toArgb()
+                                        )
+                                    )
+                                    Log.d(tag, "Sent current next piece on connection: ${piece.type.name}")
+                                } catch (e: Exception) {
+                                    Log.e(tag, "Failed to send next piece on connection", e)
+                                }
+                            }
+
+                            try {
+                                val stats = localGame.stats.value
+                                networkManager.sendMessage(
+                                    GameMessage.StatsUpdate(
+                                        score = stats.score,
+                                        level = stats.level,
+                                        linesCleared = stats.linesCleared
+                                    )
+                                )
+                                Log.d(tag, "Sent current stats on connection")
+                            } catch (e: Exception) {
+                                Log.e(tag, "Failed to send stats on connection", e)
+                            }
+                        }
+
                         // Resume game after reconnection
                         if (localGame.gameState.value is GameState.Paused) {
                             localGame.resumeGame()
