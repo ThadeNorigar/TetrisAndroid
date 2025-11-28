@@ -214,6 +214,14 @@ class MultiplayerGameViewModel(
                         } catch (e: Exception) {
                             Log.e(tag, "Failed to send current piece update", e)
                         }
+                    } else {
+                        // Piece became null (locked) - send immediate board update to prevent visual gap
+                        try {
+                            sendBoardUpdate()
+                            Log.d(tag, "Piece locked - sent immediate board update")
+                        } catch (e: Exception) {
+                            Log.e(tag, "Failed to send board update on piece lock", e)
+                        }
                     }
                 }
         })
