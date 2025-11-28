@@ -92,6 +92,11 @@ data class Tetromino(
                     listOf(1, 1, 1),
                     listOf(0, 0, 0)
                 )
+
+                // GARBAGE: 1x1 single block (not spawnable via random)
+                TetrominoType.GARBAGE -> listOf(
+                    listOf(1)
+                )
             }
             return Tetromino(type, shape, color, x = 0, y = 0)
         }
