@@ -206,6 +206,9 @@ class TetrisGame(
      * Returns true if successful, false if it causes game over
      */
     fun addGarbageLines(count: Int, garbageColor: Color = Color(0xFF808080)): Boolean {
+        // Save current piece before board shifts
+        val currentPiece = _currentPiece.value
+
         val success = board.addGarbageLines(count, garbageColor)
         if (!success) {
             // Adding garbage caused game over
@@ -217,6 +220,32 @@ class TetrisGame(
             )
             gameLoopJob?.cancel()
         } else {
+            // Board has shifted - check if current piece now collides
+            if (currentPiece != null && board.checkCollision(currentPiece)) {
+                // Piece now collides with shifted board - lock it and move up
+                board.lockTetromino(currentPiece)
+
+                // Save the current next piece (this will become the new current piece)
+                val pieceToSpawn = _nextPiece.value
+
+                // Clear current piece
+                _currentPiece.value = null
+
+                // Generate new next piece
+                _nextPiece.value = spawnPiece()
+
+                // Check for completed lines
+                val completedLines = board.findCompletedLines()
+
+                if (completedLines.isNotEmpty()) {
+                    // Start line clear animation
+                    animateLineClear(completedLines, pieceToSpawn)
+                } else {
+                    // No lines to clear, just spawn the saved next piece
+                    spawnSavedPiece(pieceToSpawn)
+                }
+            }
+
             // Update board state for rendering
             _boardState.value = board.getGridCopy()
         }
